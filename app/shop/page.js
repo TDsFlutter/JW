@@ -14,16 +14,7 @@ const PRODUCTS_PER_PAGE = 12;
 const CACHE_KEY = "ella_products_cache";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// ── Skeleton card component ───────────────────────────────────────────────────
-function SkeletonCard() {
-  return (
-    <div className={styles.skeletonCard}>
-      <div className={styles.skeletonImage} />
-      <div className={styles.skeletonLine} style={{ width: "60%", marginTop: 12 }} />
-      <div className={styles.skeletonLine} style={{ width: "40%", marginTop: 8 }} />
-    </div>
-  );
-}
+
 
 function ShopContent() {
   const searchParams = useSearchParams();
@@ -199,16 +190,8 @@ function ShopContent() {
   // ── Skeleton loading state ────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <div className={styles.skeletonTitle} />
-          <div className={styles.skeletonSubtitle} />
-        </div>
-        <div className={styles.grid}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ color: "#707070", fontStyle: "italic" }}>Loading Ella Collection...</p>
       </div>
     );
   }
