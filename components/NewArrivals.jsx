@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { products } from "@/data/products";
 import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import ProductCard from "@/components/ProductCard";
 import styles from "./NewArrivals.module.css";
 
@@ -14,24 +14,26 @@ export default function NewArrivals() {
   const [productList, setProductList] = useState([]);
 
   useEffect(() => {
-    const fetchProds = async () => {
-      if (!isFirebaseConfigured) {
-        setProductList(products);
-        return;
-      }
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
+    if (!isFirebaseConfigured) {
+      setProductList(products);
+      return;
+    }
+    const unsub = onSnapshot(
+      collection(db, "products"),
+      (querySnapshot) => {
         const fetched = [];
         querySnapshot.forEach((doc) => {
           fetched.push({ id: doc.id, ...doc.data() });
         });
         setProductList(fetched.length > 0 ? fetched : products);
-      } catch (e) {
+      },
+      (e) => {
         console.error("Error loading products for New Arrivals:", e);
         setProductList(products);
       }
-    };
-    fetchProds();
+    );
+
+    return () => unsub();
   }, []);
 
   // Show the last 3 added items as New Arrivals (or first 3 if total is less than 3)

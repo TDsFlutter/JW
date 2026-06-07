@@ -9,7 +9,7 @@ import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { isFirebaseConfigured, db, rtdb } from "@/lib/firebase";
-import { doc, getDoc, collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { doc, onSnapshot, collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
 import { ref, onValue } from "firebase/database";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProductCard from "@/components/ProductCard";
@@ -22,37 +22,39 @@ export default function ProductPageClient({ params }) {
   const [loading, setLoading] = useState(true);
   const [liveStock, setLiveStock] = useState(null);
 
-  // Fetch product from Firestore or fallback to mock data
+  // Fetch product from Firestore or fallback to mock data in real-time
   useEffect(() => {
-    const fetchProduct = async () => {
-      setLoading(true);
-      if (!isFirebaseConfigured) {
-        const mockProduct = getProductBySlug(slug);
-        setProduct(mockProduct);
-        setLoading(false);
-        return;
-      }
+    if (!slug) return;
+    setLoading(true);
 
-      try {
-        const productRef = doc(db, "products", slug);
-        const productSnap = await getDoc(productRef);
+    if (!isFirebaseConfigured) {
+      const mockProduct = getProductBySlug(slug);
+      setProduct(mockProduct);
+      setLoading(false);
+      return;
+    }
 
+    const productRef = doc(db, "products", slug);
+    const unsub = onSnapshot(
+      productRef,
+      (productSnap) => {
         if (productSnap.exists()) {
           setProduct({ ...productSnap.data(), slug });
         } else {
           const mockProduct = getProductBySlug(slug);
           setProduct(mockProduct);
         }
-      } catch (err) {
+        setLoading(false);
+      },
+      (err) => {
         console.error("Error fetching product:", err);
         const mockProduct = getProductBySlug(slug);
         setProduct(mockProduct);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchProduct();
+    return () => unsub();
   }, [slug]);
 
   // Subscribe to live stock from Realtime Database

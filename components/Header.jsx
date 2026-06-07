@@ -8,15 +8,13 @@ import { useAuth } from "@/context/AuthContext";
 import styles from "./Header.module.css";
 
 const navItems = [
-  { name: "THEME DEMO", href: "/" },
+  { name: "HOME", href: "/" },
   { name: "SHOP", href: "/shop" },
-  { name: "PRODUCT/HALF", href: "/shop" },
-  { name: "BLOG", href: "#" },
-  { name: "PAGES", href: "#" },
-  { name: "NEW IN", href: "/shop" },
-  { name: "TREND", href: "/shop" },
-  { name: "COLLECTIONS", href: "/#collections" },
-  { name: "BUY ELLA", href: "#" },
+  { name: "ABOUT US", href: "/about" },
+  { name: "ASK PRICE", href: "/ask-price" },
+  { name: "CONTACT", href: "/contact" },
+  { name: "FAQs", href: "/faqs" },
+  { name: "BLOG", href: "/blog" },
 ];
 
 export default function Header() {

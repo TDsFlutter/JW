@@ -7,7 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/context/CartContext";
 import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import styles from "./shop.module.css";
 
 function ShopContent() {
@@ -25,19 +25,19 @@ function ShopContent() {
   const [categoryList, setCategoryList] = useState(["All"]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from Firestore or fallback
+  // Fetch products from Firestore or fallback in real-time
   useEffect(() => {
-    const fetchDbProducts = async () => {
-      setLoading(true);
-      if (!isFirebaseConfigured) {
-        setProductList(mockProducts);
-        setCategoryList(mockCategories);
-        setLoading(false);
-        return;
-      }
+    if (!isFirebaseConfigured) {
+      setProductList(mockProducts);
+      setCategoryList(mockCategories);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
+    setLoading(true);
+    const unsub = onSnapshot(
+      collection(db, "products"),
+      (querySnapshot) => {
         const fetched = [];
         const cats = new Set(["All"]);
         querySnapshot.forEach((doc) => {
@@ -47,23 +47,23 @@ function ShopContent() {
         });
 
         if (fetched.length === 0) {
-          // If Firestore is empty, use mock products
           setProductList(mockProducts);
           setCategoryList(mockCategories);
         } else {
           setProductList(fetched);
           setCategoryList(Array.from(cats));
         }
-      } catch (err) {
+        setLoading(false);
+      },
+      (err) => {
         console.error("Error loading products from Firestore:", err);
         setProductList(mockProducts);
         setCategoryList(mockCategories);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchDbProducts();
+    return () => unsub();
   }, []);
 
   // Determine breadcrumbs

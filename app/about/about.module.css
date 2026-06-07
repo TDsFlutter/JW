@@ -1,0 +1,131 @@
+.page { padding: 0 0 60px; }
+.hero {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2420 50%, #1a1a1a 100%);
+  color: #fff;
+  text-align: center;
+  padding: 80px 20px 60px;
+}
+.heroTitle {
+  font-family: var(--font-baskerville), serif;
+  font-size: 2.8rem;
+  font-weight: 400;
+  margin-bottom: 12px;
+  letter-spacing: 2px;
+}
+.heroSub {
+  font-size: 1rem;
+  color: #c9b99a;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+.section {
+  padding: 60px 0;
+  border-bottom: 1px solid #eae6df;
+}
+.section:last-child { border-bottom: none; }
+
+.sectionTitle {
+  font-family: var(--font-baskerville), serif;
+  font-size: 1.8rem;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.sectionText {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #555;
+  text-align: center;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.valuesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-top: 40px;
+}
+.valueCard {
+  text-align: center;
+  padding: 30px 20px;
+  border: 1px solid #eae6df;
+  border-radius: 4px;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.valueCard:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  transform: translateY(-4px);
+}
+.valueIcon {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  display: block;
+}
+.valueTitle {
+  font-family: var(--font-baskerville), serif;
+  font-size: 1.15rem;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+.valueDesc {
+  font-size: 0.9rem;
+  color: #777;
+  line-height: 1.6;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+.stat { text-align: center; }
+.statNumber {
+  font-family: var(--font-baskerville), serif;
+  font-size: 2.2rem;
+  color: #b59410;
+  font-weight: 600;
+}
+.statLabel {
+  font-size: 0.85rem;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.ctaSection {
+  text-align: center;
+  padding: 60px 20px;
+  background: #faf9f6;
+  margin-top: 40px;
+}
+.ctaTitle {
+  font-family: var(--font-baskerville), serif;
+  font-size: 1.6rem;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+}
+.ctaBtn {
+  display: inline-block;
+  background: #1a1a1a;
+  color: #fff;
+  padding: 14px 40px;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+.ctaBtn:hover { background: #b59410; }
+
+@media (max-width: 768px) {
+  .heroTitle { font-size: 2rem; }
+  .valuesGrid { grid-template-columns: 1fr; }
+  .statsRow { gap: 30px; }
+}
