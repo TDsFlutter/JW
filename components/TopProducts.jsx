@@ -7,25 +7,27 @@ import styles from "./TopProducts.module.css";
 
 const categories = ["Diamond Ring", "Bracelet", "Pendant", "Earring"];
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const products = [
   {
     name: "Diamond In Platinum",
-    image: "/assets/image 1.png",
+    image: `${BASE_PATH}/assets/image 1.png`,
     slug: "diamond-in-platinum-ring",
   },
   {
     name: "Makers Slice Ring",
-    image: "/assets/image 2.png",
+    image: `${BASE_PATH}/assets/image 2.png`,
     slug: "makers-slice-ring",
   },
   {
     name: "Nesting Band Ring",
-    image: "/assets/image 4.png",
+    image: `${BASE_PATH}/assets/image 4.png`,
     slug: "nesting-band-ring",
   },
   {
     name: "Olive Leaf Band Ring",
-    image: "/assets/Rectangle 15.png",
+    image: `${BASE_PATH}/assets/Rectangle 15.png`,
     slug: "olive-leaf-band-ring",
   },
 ];

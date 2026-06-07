@@ -8,6 +8,7 @@ import styles from "./MustHave.module.css";
 export default function MustHave() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
   return (
     <section className={styles.section} id="must-have" ref={ref}>
@@ -30,7 +31,7 @@ export default function MustHave() {
           >
             <div className={styles.mainImage}>
               <Image
-                src="/assets/unsplash_IdU1Si3wJ-I.png"
+                src={`${BASE_PATH}/assets/unsplash_IdU1Si3wJ-I.png`}
                 alt="18k Gold Bracelets on wrist"
                 width={480}
                 height={400}
@@ -40,7 +41,7 @@ export default function MustHave() {
             <div className={styles.overlayCard}>
               <div className={styles.overlayImageWrap}>
                 <Image
-                  src="/assets/Rectangle 14.png"
+                  src={`${BASE_PATH}/assets/Rectangle 14.png`}
                   alt="Gold bracelet close-up"
                   width={220}
                   height={160}

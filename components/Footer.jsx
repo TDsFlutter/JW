@@ -2,6 +2,8 @@
 import Image from "next/image";
 import styles from "./Footer.module.css";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const aboutLinks = ["Our Story", "Careers", "Press", "Blog"];
 const shopLinks = ["Bibendumetos", "Pellentes Habitanto", "Senectus", "Consequatod"];
 const popularSearch = ["18K White Gold", "Rose Gold", "Wedding Jewelry", "Luxury Watches"];
@@ -94,18 +96,18 @@ export default function Footer() {
           <div className={styles.socials}>
             <a href="#" aria-label="Instagram" className={styles.socialBtn}>
               <Image
-                src="/assets/ant-design_instagram-filled.png"
+                src={`${BASE_PATH}/assets/ant-design_instagram-filled.png`}
                 alt="Instagram"
                 width={18}
                 height={18}
               />
             </a>
             <a href="#" aria-label="Facebook" className={styles.socialBtn}>
-              <Image src="/assets/mdi_facebook.png" alt="Facebook" width={18} height={18} />
+              <Image src={`${BASE_PATH}/assets/mdi_facebook.png`} alt="Facebook" width={18} height={18} />
             </a>
             <a href="#" aria-label="Twitter" className={styles.socialBtn}>
               <Image
-                src="/assets/ant-design_twitter-circle-filled.png"
+                src={`${BASE_PATH}/assets/ant-design_twitter-circle-filled.png`}
                 alt="Twitter"
                 width={18}
                 height={18}

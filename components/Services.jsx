@@ -4,19 +4,21 @@ import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import styles from "./Services.module.css";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const services = [
   {
-    icon: "/assets/Frame 42.png",
+    icon: `${BASE_PATH}/assets/Frame 42.png`,
     title: "FREE SHIPPING",
     description: "Lorem ipsum dolor sit amet,",
   },
   {
-    icon: "/assets/package.png",
+    icon: `${BASE_PATH}/assets/package.png`,
     title: "FREE IN STORE RETURN",
     description: "Lorem ipsum dolor sit amet,",
   },
   {
-    icon: "/assets/gala_secure.png",
+    icon: `${BASE_PATH}/assets/gala_secure.png`,
     title: "100%SECURE CHECKOUT",
     description: "Lorem ipsum dolor sit amet,",
   },

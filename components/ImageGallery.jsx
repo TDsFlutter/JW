@@ -4,29 +4,31 @@ import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import styles from "./ImageGallery.module.css";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const images = [
   {
-    src: "/assets/Rectangle 37.png",
+    src: `${BASE_PATH}/assets/Rectangle 37.png`,
     alt: "Earrings collection",
     gridArea: "left",
   },
   {
-    src: "/assets/Rectangle 32.png",
+    src: `${BASE_PATH}/assets/Rectangle 32.png`,
     alt: "Rings collection",
     gridArea: "mid-top",
   },
   {
-    src: "/assets/Rectangle 23.png",
+    src: `${BASE_PATH}/assets/Rectangle 23.png`,
     alt: "Ring styling detail",
     gridArea: "mid-bottom-left",
   },
   {
-    src: "/assets/Rectangle 34.png",
+    src: `${BASE_PATH}/assets/Rectangle 34.png`,
     alt: "Bracelet styling detail",
     gridArea: "mid-bottom-right",
   },
   {
-    src: "/assets/Rectangle 22.png",
+    src: `${BASE_PATH}/assets/Rectangle 22.png`,
     alt: "Bracelet collection detail",
     gridArea: "right",
   },

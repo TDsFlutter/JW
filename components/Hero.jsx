@@ -8,12 +8,13 @@ import styles from "./Hero.module.css";
 export default function Hero() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
+  const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
   return (
     <section className={styles.hero} id="hero-section" ref={ref}>
       <div className={styles.imageWrap}>
         <Image
-          src="/assets/Rectangle 5.png"
+          src={`${BASE_PATH}/assets/Rectangle 5.png`}
           alt="Model wearing elegant jewelry from Milancélos collection"
           fill
           priority

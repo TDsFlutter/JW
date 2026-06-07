@@ -8,6 +8,7 @@ import styles from "./Collections.module.css";
 export default function Collections() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
   return (
     <section className={styles.section} id="collections" ref={ref}>
@@ -20,7 +21,7 @@ export default function Collections() {
         >
           <div className={styles.imageWrap}>
             <Image
-              src="/assets/Rectangle 11.png"
+              src={`${BASE_PATH}/assets/Rectangle 11.png`}
               alt="Birthday Collection - Elegant gold jewelry"
               fill
               className={styles.cardImage}
@@ -49,7 +50,7 @@ export default function Collections() {
         >
           <div className={styles.imageWrap}>
             <Image
-              src="/assets/Rectangle 13.png"
+              src={`${BASE_PATH}/assets/Rectangle 13.png`}
               alt="Summer Essentials - Trendy jewelry for summer"
               fill
               className={styles.cardImage}
