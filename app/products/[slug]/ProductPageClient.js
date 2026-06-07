@@ -412,11 +412,11 @@ function ProductDetail({ product, effectiveStock }) {
     { key: "q8", question: "How should I clean my moissanite jewelry?", answer: "Clean your moissanite jewelry with warm water, mild dish soap, and a soft brush (like a toothbrush). Gently scrub, rinse thoroughly, and pat dry with a lint-free cloth. You can also use a commercial jewelry cleaner or an ultrasonic cleaner. Avoid harsh chemicals." },
   ];
 
-  const whyKowfPoints = [
+  const whyMoissanitePoints = [
     { title: "Exceptional Value", desc: "Get unmatched brilliance and quality without the high price tag." },
     { title: "Better Color Quality", desc: "Stunning D-E color for a flawless, diamond-like appearance." },
     { title: "Amazing Clarity", desc: "Impeccable clarity ensures maximum sparkle." },
-    { title: "Strong Like a Diamond", desc: "With a 9.50 hardness on the Mohs scale, KOWF Moissanite offers exceptional durability." },
+    { title: "Strong Like a Diamond", desc: "With a 9.50 hardness on the Mohs scale, our Moissanite offers exceptional durability." },
     { title: "Bigger Stone for Less", desc: "Indulge in larger, luxurious stones at a fraction of the cost." },
   ];
 
@@ -822,16 +822,16 @@ function ProductDetail({ product, effectiveStock }) {
             </div>
 
             <div className={styles.whySection}>
-              <h3 className={styles.whyTitle}>Why Choose KOWF</h3>
+              <h3 className={styles.whyTitle}>Why Choose ëlla Moissanite</h3>
               <ul className={styles.whyList}>
-                {whyKowfPoints.map((p, idx) => (
+                {whyMoissanitePoints.map((p, idx) => (
                   <li key={idx} className={styles.whyItem}>
                     <strong>{p.title}:</strong> {p.desc}
                   </li>
                 ))}
               </ul>
               <p className={styles.whySeparator}>
-                Each <strong>KOWF gemstone</strong> is a masterpiece of luxury, meticulously authenticated and GIA certified to meet uncompromising standards of brilliance.
+                Each <strong>ëlla Moissanite gemstone</strong> is a masterpiece of luxury, meticulously authenticated and GIA certified to meet uncompromising standards of brilliance.
               </p>
               <p className={styles.whyCallout}>
                 Even expert jewelers can&apos;t distinguish <strong>Moissanite</strong> from a natural diamond — even with a diamond tester!
@@ -908,7 +908,7 @@ function ProductDetail({ product, effectiveStock }) {
                   <span className={styles.compHeaderLabel}>Attribute</span>
                 </th>
                 <th className={styles.compMoissanite}>
-                  <span className={styles.compHeaderLabel}>KOWF Moissanite</span>
+                  <span className={styles.compHeaderLabel}>ëlla Moissanite</span>
                 </th>
                 <th className={styles.compDiamond}>
                   <span className={styles.compHeaderLabel}>Natural Diamond</span>
