@@ -1,0 +1,141 @@
+.footer {
+  background: var(--bg-light);
+  padding: 60px 0 30px;
+  border-top: 1px solid var(--border-light);
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(6, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.logoCol {
+  display: flex;
+  align-items: flex-start;
+}
+
+.logoText {
+  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-size: 38px;
+  font-weight: 400;
+  color: var(--text-dark);
+  line-height: 1;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.colTitle {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: block;
+}
+
+.link {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--text-gray);
+  transition: color var(--transition-fast);
+}
+
+.link:hover {
+  color: var(--crimson);
+}
+
+.infoText {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--text-gray);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.bottomBar {
+  border-top: 1px solid var(--border-light);
+  padding-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.socials {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.socialBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.socialBtn:hover {
+  transform: translateY(-2px);
+}
+
+.socialBtn img {
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+
+.socialBtn:hover img {
+  opacity: 1;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .logoCol {
+    grid-column: 1 / span 2;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .logoCol {
+    grid-column: auto;
+  }
+  .bottomBar {
+    justify-content: center;
+  }
+}

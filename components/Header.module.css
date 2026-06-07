@@ -1,0 +1,264 @@
+.header {
+  background: var(--bg-white);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  box-shadow: 0 1px 0 var(--border-light);
+}
+
+.topRow {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-size: 42px;
+  font-weight: 400;
+  color: var(--text-dark);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.searchBar {
+  flex: 1;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 25px;
+  padding: 0 16px;
+  height: 42px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.searchBar:focus-within {
+  border-color: var(--crimson);
+  box-shadow: 0 0 0 2px rgba(155, 14, 46, 0.1);
+}
+
+.searchInput {
+  flex: 1;
+  height: 100%;
+  font-size: 13px;
+  color: var(--text-gray);
+  background: transparent;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+}
+
+.searchInput::placeholder {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.searchIcons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.iconBtn:hover {
+  background: var(--bg-light);
+  transform: translateY(-1px);
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: var(--crimson);
+  color: var(--bg-white);
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  box-shadow: 0 0 0 2px var(--bg-white);
+  pointer-events: none;
+}
+
+.iconBtn img {
+  object-fit: contain;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.iconBtn:hover img {
+  opacity: 1;
+}
+
+/* Navigation */
+.nav {
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-white);
+}
+
+.navList {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+
+.navItem {
+  position: relative;
+}
+
+.navLink {
+  display: block;
+  padding: 14px 0;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-dark);
+  text-transform: uppercase;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.navLink::after {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--crimson);
+  transition: width var(--transition-base);
+}
+
+.navLink:hover {
+  color: var(--crimson);
+}
+
+.navLink:hover::after {
+  width: 100%;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.hamburgerLine {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text-dark);
+  border-radius: 2px;
+  transition: all var(--transition-base);
+}
+
+.hamburgerLine.open:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburgerLine.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerLine.open:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Mobile */
+@media (max-width: 1024px) {
+  .navList {
+    gap: 20px;
+  }
+  .navLink {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .searchBar {
+    display: none;
+  }
+
+  .headerActions {
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-white);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    transition: right var(--transition-base);
+    z-index: 99;
+    padding-top: 80px;
+    border-top: none;
+  }
+
+  .navOpen {
+    right: 0;
+  }
+
+  .navList {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0;
+  }
+
+  .navLink {
+    padding: 14px 24px;
+    width: 100%;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+
+  .navLink::after {
+    display: none;
+  }
+}

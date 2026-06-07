@@ -1,0 +1,281 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  cursor: pointer;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  background: var(--bg-white);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid var(--border-light);
+  gap: 12px;
+}
+
+.title {
+  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.count {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.closeBtn {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: var(--bg-light);
+  color: var(--crimson);
+}
+
+.items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  padding: 60px 0;
+}
+
+.emptyIcon {
+  font-size: 48px;
+}
+
+.emptyText {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 16px;
+  color: var(--text-gray);
+}
+
+.continueBtn {
+  padding: 10px 28px;
+  background: var(--crimson);
+  color: #fff;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.continueBtn:hover {
+  background: var(--crimson-dark);
+}
+
+.item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.itemImage {
+  width: 80px;
+  height: 80px;
+  background: var(--bg-cream);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemName {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemVariant {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 6px;
+}
+
+.itemPriceRow {
+  margin-bottom: 8px;
+}
+
+.itemPrice {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--crimson);
+}
+
+.qtyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qtyBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: var(--bg-white);
+}
+
+.qtyBtn:hover:not(:disabled) {
+  border-color: var(--crimson);
+  color: var(--crimson);
+}
+
+.qtyBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.qtyNum {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.removeBtn {
+  margin-left: auto;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 11px;
+  color: var(--text-light);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.removeBtn:hover {
+  color: var(--crimson);
+}
+
+.footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-cream);
+}
+
+.subtotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 15px;
+  color: var(--text-dark);
+}
+
+.subtotalPrice {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--crimson);
+}
+
+.shippingNote {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 11px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+.checkoutBtn {
+  display: block;
+  width: 100%;
+  padding: 14px 0;
+  text-align: center;
+  background: var(--crimson);
+  color: #fff;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  margin-bottom: 12px;
+}
+
+.checkoutBtn:hover {
+  background: var(--crimson-dark);
+}
+
+.continueLink {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.continueLink:hover {
+  color: var(--crimson);
+}
+
+@media (max-width: 480px) {
+  .drawer {
+    width: 100vw;
+  }
+}

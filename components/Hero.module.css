@@ -1,0 +1,129 @@
+.hero {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  overflow: hidden;
+}
+
+.imageWrap {
+  position: absolute;
+  inset: 0;
+}
+
+.heroImage {
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 8s ease;
+}
+
+.hero:hover .heroImage {
+  transform: scale(1.03);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.15) 50%,
+    transparent 100%
+  );
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 48px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #fff;
+}
+
+.label {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  opacity: 0.9;
+}
+
+.title {
+  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.description {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  opacity: 0.85;
+  margin-bottom: 28px;
+  max-width: 320px;
+}
+
+.shopBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--crimson);
+  color: #fff;
+  padding: 14px 36px;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+  width: fit-content;
+  cursor: pointer;
+}
+
+.shopBtn:hover {
+  background: var(--crimson-dark);
+  box-shadow: 0 4px 16px rgba(155, 14, 46, 0.4);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    height: 420px;
+  }
+
+  .content {
+    padding: 0 24px;
+  }
+
+  .title {
+    font-size: 44px;
+  }
+
+  .description {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    height: 380px;
+  }
+
+  .title {
+    font-size: 36px;
+  }
+
+  .shopBtn {
+    padding: 12px 28px;
+    font-size: 12px;
+  }
+}

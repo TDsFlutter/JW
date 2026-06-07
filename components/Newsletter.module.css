@@ -1,0 +1,113 @@
+.section {
+  padding: 80px 0;
+  background: var(--bg-cream);
+  text-align: center;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-dark);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--text-gray);
+  margin-bottom: 32px;
+}
+
+.form {
+  display: flex;
+  align-items: center;
+  background: var(--bg-white);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 50px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form:focus-within {
+  border-color: var(--crimson);
+  box-shadow: 0 4px 12px rgba(155, 14, 46, 0.08);
+}
+
+.input {
+  flex: 1;
+  height: 100%;
+  padding: 0 20px;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: transparent;
+}
+
+.input::placeholder {
+  color: var(--text-light);
+}
+
+.submitBtn {
+  background: var(--crimson);
+  color: #fff;
+  height: 100%;
+  padding: 0 36px;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  transition: background var(--transition-fast);
+}
+
+.submitBtn:hover {
+  background: var(--crimson-dark);
+}
+
+.successMsg {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--crimson);
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .title {
+    font-size: 20px;
+  }
+  .subtitle {
+    font-size: 13px;
+  }
+  .form {
+    flex-direction: column;
+    height: auto;
+    border: none;
+    background: transparent;
+    gap: 12px;
+  }
+  .input {
+    width: 100%;
+    height: 48px;
+    background: var(--bg-white);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+  }
+  .submitBtn {
+    width: 100%;
+    height: 48px;
+    border-radius: var(--radius-sm);
+  }
+}

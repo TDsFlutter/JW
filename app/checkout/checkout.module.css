@@ -1,0 +1,338 @@
+.page {
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.pageTitle {
+  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--crimson);
+  margin-bottom: 32px;
+}
+
+/* Empty State */
+.emptyPage {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyContent {
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.emptyTitle {
+  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-size: 28px;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 15px;
+  color: var(--text-gray);
+  margin-bottom: 24px;
+}
+
+.shopLink {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--crimson);
+  color: #fff;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.shopLink:hover {
+  background: var(--crimson-dark);
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+/* Form */
+.formSection {
+  padding-bottom: 40px;
+}
+
+.sectionTitle {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.paymentTitle {
+  margin-top: 32px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldFull {
+  composes: field;
+  grid-column: 1 / -1;
+}
+
+.label {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.input {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: var(--bg-white);
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  border-color: var(--crimson);
+  box-shadow: 0 0 0 2px rgba(155, 14, 46, 0.08);
+}
+
+.placeOrderBtn {
+  margin-top: 32px;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--crimson);
+  color: #fff;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.placeOrderBtn:hover {
+  background: var(--crimson-dark);
+  box-shadow: 0 4px 16px rgba(155, 14, 46, 0.3);
+}
+
+/* Summary */
+.summarySection {
+  position: sticky;
+  top: 140px;
+}
+
+.summaryCard {
+  background: var(--bg-cream);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  border: 1px solid var(--border-light);
+}
+
+.summaryTitle {
+  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+
+.summaryItems {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summaryItemImg {
+  width: 56px;
+  height: 56px;
+  background: var(--bg-white);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.summaryItemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.summaryItemName {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summaryItemVariant {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.summaryItemPrice {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+  flex-shrink: 0;
+}
+
+.summaryDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 16px 0;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--text-gray);
+  padding: 4px 0;
+}
+
+.totalRow {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--crimson);
+  padding: 8px 0;
+}
+
+.freeShipNote {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 12px;
+  color: #16A34A;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* Success */
+.successWrap {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.successCard {
+  text-align: center;
+  max-width: 480px;
+}
+
+.successIcon {
+  width: 80px;
+  height: 80px;
+  background: #16A34A;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0 auto 24px;
+}
+
+.successTitle {
+  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+
+.successText {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 15px;
+  color: var(--text-gray);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.orderId {
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 28px;
+}
+
+.successBtn {
+  composes: shopLink;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .summarySection {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pageTitle {
+    font-size: 26px;
+  }
+}
