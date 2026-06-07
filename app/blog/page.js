@@ -1,34 +1,8 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { blogPosts } from "@/data/blog";
 import styles from "./blog.module.css";
-
-const blogPosts = [
-  {
-    id: 1,
-    title: "How to Choose the Perfect Moissanite Engagement Ring",
-    excerpt: "Discover the key differences between moissanite and diamonds, and how to select the right cut, setting, and metal for your special someone.",
-    image: "/assets/Rectangle 13.png",
-    date: "June 5, 2026",
-    category: "Buying Guide"
-  },
-  {
-    id: 2,
-    title: "Caring for Your 925 Sterling Silver Jewelry",
-    excerpt: "Keep your sterling silver shining bright for years to come with our simple care instructions, cleaning tips, and storage advice.",
-    image: "/assets/Rectangle 14.png",
-    date: "May 28, 2026",
-    category: "Jewelry Care"
-  },
-  {
-    id: 3,
-    title: "The Ultimate Guide to Custom Jewelry Design",
-    excerpt: "From initial sketch to final polish, learn how our custom jewelry design process works and how you can bring your dream piece to life.",
-    image: "/assets/Rectangle 15.png",
-    date: "May 15, 2026",
-    category: "Custom Design"
-  }
-];
 
 export default function BlogPage() {
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -76,7 +50,7 @@ export default function BlogPage() {
                 </div>
                 <h2 className={styles.cardTitle}>{post.title}</h2>
                 <p className={styles.cardExcerpt}>{post.excerpt}</p>
-                <Link href="#" className={styles.cardLink}>
+                <Link href={`/blog/${post.slug}`} className={styles.cardLink}>
                   Read More
                 </Link>
               </div>
