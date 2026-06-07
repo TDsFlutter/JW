@@ -1,12 +1,42 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { isFirebaseConfigured, db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import styles from "./contact.module.css";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [contacts, setContacts] = useState({
+    phone: "+91 98765 43210",
+    whatsapp: "+91 98765 43210",
+    email: "support@ella-jewelry.com",
+    address: "ëlla Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
+    hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST\nSunday: Closed",
+    instagram: "https://instagram.com",
+    facebook: "https://facebook.com",
+    twitter: "https://twitter.com"
+  });
+
+  useEffect(() => {
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_contacts");
+      if (cached) setContacts(JSON.parse(cached));
+      return;
+    }
+    const unsub = onSnapshot(doc(db, "settings", "contacts"), (docSnap) => {
+      if (docSnap.exists()) {
+        setContacts(docSnap.data());
+      } else {
+        const cached = localStorage.getItem("mock_contacts");
+        if (cached) setContacts(JSON.parse(cached));
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -49,7 +79,11 @@ export default function ContactPage() {
               <div className={styles.infoIcon}>📧</div>
               <div>
                 <div className={styles.infoLabel}>Email</div>
-                <div className={styles.infoValue}>support@ella-jewelry.com</div>
+                <div className={styles.infoValue}>
+                  <a href={`mailto:${contacts.email}`} style={{ color: "inherit", textDecoration: "none" }}>
+                    {contacts.email}
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -57,7 +91,11 @@ export default function ContactPage() {
               <div className={styles.infoIcon}>📞</div>
               <div>
                 <div className={styles.infoLabel}>Phone</div>
-                <div className={styles.infoValue}>+91 98765 43210</div>
+                <div className={styles.infoValue}>
+                  <a href={`tel:${contacts.phone}`} style={{ color: "inherit", textDecoration: "none" }}>
+                    {contacts.phone}
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -65,10 +103,8 @@ export default function ContactPage() {
               <div className={styles.infoIcon}>📍</div>
               <div>
                 <div className={styles.infoLabel}>Address</div>
-                <div className={styles.infoValue}>
-                  ëlla Jewelry Studio<br />
-                  Diamond Bourse, BKC<br />
-                  Mumbai, Maharashtra 400051
+                <div className={styles.infoValue} style={{ whiteSpace: "pre-wrap" }}>
+                  {contacts.address}
                 </div>
               </div>
             </div>
@@ -77,15 +113,18 @@ export default function ContactPage() {
               <div className={styles.infoIcon}>💬</div>
               <div>
                 <div className={styles.infoLabel}>WhatsApp</div>
-                <div className={styles.infoValue}>+91 98765 43210</div>
+                <div className={styles.infoValue}>
+                  <a href={`https://wa.me/${contacts.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                    {contacts.whatsapp}
+                  </a>
+                </div>
               </div>
             </div>
 
             <div className={styles.hours}>
               <div className={styles.hoursTitle}>Business Hours</div>
-              <div className={styles.hoursText}>
-                Monday – Saturday: 10:00 AM – 7:00 PM IST<br />
-                Sunday: Closed
+              <div className={styles.hoursText} style={{ whiteSpace: "pre-wrap" }}>
+                {contacts.hours}
               </div>
             </div>
           </div>

@@ -1,15 +1,64 @@
 "use client";
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { isFirebaseConfigured, db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import { blogPosts } from "@/data/blog";
 import styles from "../blog.module.css";
 
 export default function BlogDetailPageClient({ params }) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+  useEffect(() => {
+    if (!slug) return;
+
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_blogs");
+      const list = cached ? JSON.parse(cached) : blogPosts;
+      const found = list.find((p) => p.slug === slug);
+      setPost(found);
+      setLoading(false);
+      return;
+    }
+
+    const unsub = onSnapshot(
+      doc(db, "blogs", slug),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setPost(docSnap.data());
+        } else {
+          const cached = localStorage.getItem("mock_blogs");
+          const list = cached ? JSON.parse(cached) : blogPosts;
+          const found = list.find((p) => p.slug === slug);
+          setPost(found);
+        }
+        setLoading(false);
+      },
+      (e) => {
+        console.error("Error loading blog details from Firestore:", e);
+        const cached = localStorage.getItem("mock_blogs");
+        const list = cached ? JSON.parse(cached) : blogPosts;
+        const found = list.find((p) => p.slug === slug);
+        setPost(found);
+        setLoading(false);
+      }
+    );
+
+    return () => unsub();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ color: "#707070", fontStyle: "italic" }}>Loading Journal Entry...</p>
+      </div>
+    );
+  }
 
   if (!post) {
     return (

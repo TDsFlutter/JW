@@ -1,5 +1,8 @@
 "use client";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { isFirebaseConfigured, db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import styles from "./Footer.module.css";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -10,6 +13,34 @@ const popularSearch = ["18K White Gold", "Rose Gold", "Wedding Jewelry", "Luxury
 const helpLinks = ["Sizing Help", "Returns & Exchanges", "Shipping", "Theme FAQs"];
 
 export default function Footer() {
+  const [contacts, setContacts] = useState({
+    phone: "+91 98765 43210",
+    whatsapp: "+91 98765 43210",
+    email: "support@ella-jewelry.com",
+    address: "ëlla Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
+    hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST\nSunday: Closed",
+    instagram: "https://instagram.com",
+    facebook: "https://facebook.com",
+    twitter: "https://twitter.com"
+  });
+
+  useEffect(() => {
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_contacts");
+      if (cached) setContacts(JSON.parse(cached));
+      return;
+    }
+    const unsub = onSnapshot(doc(db, "settings", "contacts"), (docSnap) => {
+      if (docSnap.exists()) {
+        setContacts(docSnap.data());
+      } else {
+        const cached = localStorage.getItem("mock_contacts");
+        if (cached) setContacts(JSON.parse(cached));
+      }
+    });
+    return () => unsub();
+  }, []);
+
   return (
     <footer className={styles.footer} id="site-footer">
       <div className={styles.container}>
@@ -75,18 +106,14 @@ export default function Footer() {
           {/* Contact & Address */}
           <div className={styles.col}>
             <h4 className={styles.colTitle}>Contact Us</h4>
-            <p className={styles.infoText}>TEXT: (090) 123-Ella</p>
-            <p className={styles.infoText}>Email: example@domain.com</p>
+            <p className={styles.infoText}>TEL: {contacts.phone}</p>
+            <p className={styles.infoText}>Email: {contacts.email}</p>
           </div>
 
           <div className={styles.col}>
             <h4 className={styles.colTitle}>Address</h4>
-            <p className={styles.infoText}>
-              685 Market Street
-              <br />
-              San Francisco, CA
-              <br />
-              94105, US
+            <p className={styles.infoText} style={{ whiteSpace: "pre-wrap" }}>
+              {contacts.address}
             </p>
           </div>
         </div>
@@ -94,7 +121,7 @@ export default function Footer() {
         {/* Bottom Social Bar */}
         <div className={styles.bottomBar}>
           <div className={styles.socials}>
-            <a href="#" aria-label="Instagram" className={styles.socialBtn}>
+            <a href={contacts.instagram || "#"} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className={styles.socialBtn}>
               <Image
                 src={`${BASE_PATH}/assets/ant-design_instagram-filled.png`}
                 alt="Instagram"
@@ -102,10 +129,10 @@ export default function Footer() {
                 height={18}
               />
             </a>
-            <a href="#" aria-label="Facebook" className={styles.socialBtn}>
+            <a href={contacts.facebook || "#"} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className={styles.socialBtn}>
               <Image src={`${BASE_PATH}/assets/mdi_facebook.png`} alt="Facebook" width={18} height={18} />
             </a>
-            <a href="#" aria-label="Twitter" className={styles.socialBtn}>
+            <a href={contacts.twitter || "#"} target="_blank" rel="noopener noreferrer" aria-label="Twitter" className={styles.socialBtn}>
               <Image
                 src={`${BASE_PATH}/assets/ant-design_twitter-circle-filled.png`}
                 alt="Twitter"

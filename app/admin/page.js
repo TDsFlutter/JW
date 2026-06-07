@@ -16,13 +16,38 @@ import {
   dbSet
 } from "@/lib/firebase";
 import { products as initialProducts } from "@/data/products";
+import { blogPosts as initialBlogs } from "@/data/blog";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./admin.module.css";
 
+const defaultFaqsData = {
+  "Product & Quality": [
+    { q: "What is moissanite?", a: "Moissanite is a lab-created gemstone that rivals the brilliance and fire of natural diamonds. It ranks 9.25 on the Mohs hardness scale, making it one of the hardest gemstones available — perfect for everyday wear." },
+    { q: "Is your jewelry made of real sterling silver?", a: "Yes! All our jewelry is crafted from premium 92.5% purity solid sterling silver (925 silver). Each piece is stamped with the 925 mark of quality and authenticity." },
+    { q: "Will the silver tarnish over time?", a: "Sterling silver can naturally tarnish when exposed to moisture and chemicals, but we apply thick Platinum, Rose Gold, or 18K Gold plating to help resist tarnishing. With proper care, your piece will maintain its shine for years." },
+    { q: "Do you provide a certificate of authenticity?", a: "Yes, every order includes a TGL (Transnational Gemmological Laboratory) Certificate of Authenticity verifying the quality and specifications of your moissanite gemstone." },
+  ],
+  "Orders & Shipping": [
+    { q: "How long does shipping take?", a: "We offer free worldwide shipping. Domestic orders (India) are delivered in 5-7 business days. International orders typically arrive within 10-15 business days, depending on your location and customs clearance." },
+    { q: "Do you ship internationally?", a: "Yes! We ship to 30+ countries worldwide. International shipping is free on orders above ₹2,999 / $99." },
+    { q: "Can I track my order?", a: "Absolutely. Once your order is shipped, you will receive a tracking number via email and SMS. You can track your package in real-time through our website or the courier's tracking portal." },
+  ],
+  "Returns & Exchanges": [
+    { q: "What is your return policy?", a: "We offer a 15-day exchange policy. If you receive a defective product or the wrong item, we will arrange a full refund or replacement. Since all our products are custom-made, we do not accept returns for change of mind." },
+    { q: "How do I initiate a return or exchange?", a: "Contact our support team at support@ella-jewelry.com with your order number, photos of the product, and a description of the issue. We will respond within 24 hours with instructions." },
+    { q: "Do you offer a warranty?", a: "Yes, we provide a 6-month product warranty covering manufacturing defects including issues with plating, stone settings, and structural integrity." },
+  ],
+  "Payment & Pricing": [
+    { q: "What payment methods do you accept?", a: "We accept all major credit/debit cards, UPI, net banking, and popular wallets. We also support Cash on Delivery (COD) for orders within India." },
+    { q: "Are there any hidden charges?", a: "No. The price you see is the price you pay. We do not charge any additional processing fees, and shipping is free on qualifying orders." },
+    { q: "Do you offer discounts on bulk orders?", a: "Yes! For bulk or wholesale inquiries, please use our Ask Price page or contact us directly at support@ella-jewelry.com." },
+  ],
+};
+
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, products, orders, content, live
+  const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, products, orders, content, live, metadata, blogs, faqs, contacts
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [activeCarts, setActiveCarts] = useState({});
@@ -53,6 +78,36 @@ export default function AdminDashboard() {
   const [heroSubtitle, setHeroSubtitle] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [contentSuccess, setContentSuccess] = useState("");
+
+  // Contacts / Socials
+  const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [hours, setHours] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [twitter, setTwitter] = useState("");
+
+  // Blogs
+  const [blogs, setBlogs] = useState([]);
+  const [blogDrawerOpen, setBlogDrawerOpen] = useState(false);
+  const [editingBlog, setEditingBlog] = useState(null);
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogExcerpt, setBlogExcerpt] = useState("");
+  const [blogCategory, setBlogCategory] = useState("Buying Guide");
+  const [blogContent, setBlogContent] = useState("");
+  const [blogImage, setBlogImage] = useState("");
+  const [blogDate, setBlogDate] = useState("");
+  const [uploadingBlogImage, setUploadingBlogImage] = useState(false);
+
+  // FAQs
+  const [faqs, setFaqs] = useState([]);
+  const [faqDrawerOpen, setFaqDrawerOpen] = useState(false);
+  const [editingFaq, setEditingFaq] = useState(null);
+  const [faqCategory, setFaqCategory] = useState("Product & Quality");
+  const [faqQuestion, setFaqQuestion] = useState("");
+  const [faqAnswer, setFaqAnswer] = useState("");
 
   // Fast Listing Metadata Options Configuration
   const [metadataConfig, setMetadataConfig] = useState({
@@ -172,6 +227,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     const loadDashboardData = async () => {
       setLoading(true);
+      setError("");
+      setSuccess("");
       
       // Load products
       if (!isFirebaseConfigured) {
@@ -237,6 +294,99 @@ export default function AdminDashboard() {
           }
         } catch (e) {
           console.error(e);
+        }
+      }
+
+      // Load Contacts & Socials
+      const defaultContacts = {
+        phone: "+91 98765 43210",
+        whatsapp: "+91 98765 43210",
+        email: "support@ella-jewelry.com",
+        address: "ëlla Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
+        hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST\nSunday: Closed",
+        instagram: "https://instagram.com",
+        facebook: "https://facebook.com",
+        twitter: "https://twitter.com"
+      };
+      if (!isFirebaseConfigured) {
+        const cached = localStorage.getItem("mock_contacts");
+        if (cached) {
+          const data = JSON.parse(cached);
+          setPhone(data.phone || ""); setWhatsapp(data.whatsapp || ""); setEmail(data.email || ""); setAddress(data.address || "");
+          setHours(data.hours || ""); setInstagram(data.instagram || ""); setFacebook(data.facebook || ""); setTwitter(data.twitter || "");
+        } else {
+          setPhone(defaultContacts.phone); setWhatsapp(defaultContacts.whatsapp); setEmail(defaultContacts.email); setAddress(defaultContacts.address);
+          setHours(defaultContacts.hours); setInstagram(defaultContacts.instagram); setFacebook(defaultContacts.facebook); setTwitter(defaultContacts.twitter);
+        }
+      } else {
+        try {
+          const docSnap = await getDoc(doc(db, "settings", "contacts"));
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setPhone(data.phone || ""); setWhatsapp(data.whatsapp || ""); setEmail(data.email || ""); setAddress(data.address || "");
+            setHours(data.hours || ""); setInstagram(data.instagram || ""); setFacebook(data.facebook || ""); setTwitter(data.twitter || "");
+          } else {
+            setPhone(defaultContacts.phone); setWhatsapp(defaultContacts.whatsapp); setEmail(defaultContacts.email); setAddress(defaultContacts.address);
+            setHours(defaultContacts.hours); setInstagram(defaultContacts.instagram); setFacebook(defaultContacts.facebook); setTwitter(defaultContacts.twitter);
+          }
+        } catch (e) {
+          console.error("Error loading contacts configuration:", e);
+        }
+      }
+
+      // Load Blogs
+      if (!isFirebaseConfigured) {
+        const cached = localStorage.getItem("mock_blogs");
+        setBlogs(cached ? JSON.parse(cached) : initialBlogs);
+      } else {
+        try {
+          const querySnapshot = await getDocs(collection(db, "blogs"));
+          const fetchedBlogs = [];
+          querySnapshot.forEach((doc) => {
+            fetchedBlogs.push({ id: doc.id, ...doc.data() });
+          });
+          setBlogs(fetchedBlogs.length > 0 ? fetchedBlogs : initialBlogs);
+        } catch (err) {
+          console.error("Error loading blogs:", err);
+          setBlogs(initialBlogs);
+        }
+      }
+
+      // Load FAQs
+      if (!isFirebaseConfigured) {
+        const cached = localStorage.getItem("mock_faqs");
+        if (cached) {
+          setFaqs(JSON.parse(cached));
+        } else {
+          const flattened = [];
+          Object.entries(defaultFaqsData).forEach(([category, items]) => {
+            items.forEach((item, idx) => {
+              flattened.push({ id: `${category}-${idx}`, category, q: item.q, a: item.a });
+            });
+          });
+          setFaqs(flattened);
+          localStorage.setItem("mock_faqs", JSON.stringify(flattened));
+        }
+      } else {
+        try {
+          const querySnapshot = await getDocs(collection(db, "faq"));
+          const fetchedFaqs = [];
+          querySnapshot.forEach((doc) => {
+            fetchedFaqs.push({ id: doc.id, ...doc.data() });
+          });
+          if (fetchedFaqs.length > 0) {
+            setFaqs(fetchedFaqs);
+          } else {
+            const flattened = [];
+            Object.entries(defaultFaqsData).forEach(([category, items]) => {
+              items.forEach((item, idx) => {
+                flattened.push({ id: `${category}-${idx}`, category, q: item.q, a: item.a });
+              });
+            });
+            setFaqs(flattened);
+          }
+        } catch (err) {
+          console.error("Error loading FAQs:", err);
         }
       }
 
@@ -373,7 +523,6 @@ export default function AdminDashboard() {
     };
 
     if (!isFirebaseConfigured) {
-      // Mock Save to LocalStorage
       const local = localStorage.getItem("mock_products");
       let updatedProds = [];
       if (local) {
@@ -398,10 +547,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      // Save to Cloud Firestore
       await setDoc(doc(db, "products", productData.slug), productData);
-      
-      // Update inventory in Realtime Database as well!
       if (rtdb) {
         const stockRef = ref(rtdb, `inventory/${productData.slug}`);
         await dbSet(stockRef, productData.stock);
@@ -410,7 +556,6 @@ export default function AdminDashboard() {
       setSuccess("Product saved successfully in Firebase!");
       setTimeout(() => {
         setIsDrawerOpen(false);
-        // Trigger page refresh data
         setActiveTab("products");
       }, 1200);
     } catch (err) {
@@ -437,7 +582,6 @@ export default function AdminDashboard() {
 
     try {
       await deleteDoc(doc(db, "products", slug));
-      // Refresh list
       setProducts(products.filter(p => p.slug !== slug));
       alert("Product deleted from Firestore successfully.");
     } catch (err) {
@@ -496,6 +640,286 @@ export default function AdminDashboard() {
     }
   };
 
+  // Update Contacts
+  const handleSaveContacts = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    const contactsData = { phone, whatsapp, email, address, hours, instagram, facebook, twitter };
+    
+    if (!isFirebaseConfigured) {
+      localStorage.setItem("mock_contacts", JSON.stringify(contactsData));
+      setSuccess("Contacts and Social Links updated in Local Storage!");
+      setTimeout(() => setSuccess(""), 3000);
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, "settings", "contacts"), contactsData);
+      setSuccess("Contacts and Social Links saved to Firestore successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save contacts: " + err.message);
+    }
+  };
+
+  // Manage Blog Submit
+  const handleBlogSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!blogTitle || !blogContent) {
+      setError("Title and Content are required.");
+      return;
+    }
+
+    const slug = editingBlog?.slug || blogTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").slice(0, 40);
+    const blogData = {
+      title: blogTitle,
+      excerpt: blogExcerpt || blogContent.slice(0, 120) + "...",
+      category: blogCategory,
+      content: blogContent,
+      image: blogImage || "/assets/Rectangle 13.png",
+      date: blogDate || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+      slug: slug
+    };
+
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_blogs");
+      let list = cached ? JSON.parse(cached) : initialBlogs;
+      let updatedList = [];
+      if (editingBlog) {
+        updatedList = list.map(b => b.slug === editingBlog.slug ? { ...blogData, id: b.id } : b);
+      } else {
+        const newId = list.length > 0 ? Math.max(...list.map(b => b.id || 0)) + 1 : 1;
+        updatedList = [...list, { id: newId, ...blogData }];
+      }
+      localStorage.setItem("mock_blogs", JSON.stringify(updatedList));
+      setBlogs(updatedList);
+      setSuccess("Blog post saved to Local Storage!");
+      setTimeout(() => setBlogDrawerOpen(false), 1200);
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, "blogs", slug), blogData);
+      setSuccess("Blog post saved successfully in Firestore!");
+      setTimeout(() => {
+        setBlogDrawerOpen(false);
+        setActiveTab("blogs");
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save blog post: " + err.message);
+    }
+  };
+
+  // Delete Blog
+  const handleDeleteBlog = async (slug) => {
+    if (!confirm("Are you sure you want to delete this blog post?")) return;
+
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_blogs");
+      if (cached) {
+        const list = JSON.parse(cached);
+        const filtered = list.filter(b => b.slug !== slug);
+        localStorage.setItem("mock_blogs", JSON.stringify(filtered));
+        setBlogs(filtered);
+      }
+      alert("Blog post deleted from Local Storage.");
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, "blogs", slug));
+      setBlogs(blogs.filter(b => b.slug !== slug));
+      alert("Blog post deleted from Firestore successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete blog: " + err.message);
+    }
+  };
+
+  // Manage FAQ Submit
+  const handleFaqSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!faqQuestion || !faqAnswer) {
+      setError("Question and Answer are required.");
+      return;
+    }
+
+    const cleanKey = editingFaq?.id || faqQuestion.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").slice(0, 30);
+    const faqData = {
+      category: faqCategory,
+      question: faqQuestion,
+      answer: faqAnswer,
+      key: cleanKey
+    };
+
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_faqs");
+      let list = [];
+      if (cached) {
+        list = JSON.parse(cached);
+      } else {
+        Object.entries(defaultFaqsData).forEach(([category, items]) => {
+          items.forEach((item, idx) => {
+            list.push({ id: `${category}-${idx}`, category, q: item.q, a: item.a });
+          });
+        });
+      }
+
+      let updatedList = [];
+      if (editingFaq) {
+        updatedList = list.map(f => f.id === editingFaq.id ? { ...f, category: faqCategory, q: faqQuestion, a: faqAnswer } : f);
+      } else {
+        updatedList = [...list, { id: cleanKey, category: faqCategory, q: faqQuestion, a: faqAnswer }];
+      }
+
+      localStorage.setItem("mock_faqs", JSON.stringify(updatedList));
+      setFaqs(updatedList);
+      setSuccess("FAQ saved to Local Storage!");
+      setTimeout(() => setFaqDrawerOpen(false), 1200);
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, "faq", cleanKey), faqData);
+      setSuccess("FAQ saved successfully in Firestore!");
+      setTimeout(() => {
+        setFaqDrawerOpen(false);
+        setActiveTab("faqs");
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save FAQ: " + err.message);
+    }
+  };
+
+  // Delete FAQ
+  const handleDeleteFaq = async (id) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
+
+    if (!isFirebaseConfigured) {
+      const cached = localStorage.getItem("mock_faqs");
+      if (cached) {
+        const list = JSON.parse(cached);
+        const filtered = list.filter(f => f.id !== id);
+        localStorage.setItem("mock_faqs", JSON.stringify(filtered));
+        setFaqs(filtered);
+      }
+      alert("FAQ deleted from Local Storage.");
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, "faq", id));
+      setFaqs(faqs.filter(f => f.id !== id));
+      alert("FAQ deleted from Firestore successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete FAQ: " + err.message);
+    }
+  };
+
+  // Blog File Upload to GitLab
+  const handleBlogFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size exceeds 5MB limit.");
+      return;
+    }
+
+    setUploadingBlogImage(true);
+
+    try {
+      const token = process.env.NEXT_PUBLIC_GITLAB_ACCESS_TOKEN;
+      const projectId = process.env.NEXT_PUBLIC_GITLAB_PROJECT_ID;
+      const branch = process.env.NEXT_PUBLIC_GITLAB_BRANCH || "main";
+      const uploadPath = process.env.NEXT_PUBLIC_GITLAB_UPLOAD_PATH || "public/uploads";
+      const baseUrl = process.env.NEXT_PUBLIC_GITLAB_BASE_URL || "https://gitlab.com";
+
+      if (!token || token === "YOUR_PERSONAL_ACCESS_TOKEN" || !projectId || projectId === "YOUR_PROJECT_ID") {
+        alert("GitLab configuration is missing. Please check your env variables.");
+        setUploadingBlogImage(false);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(",")[1];
+          const uniqueFileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+          const cleanUploadPath = uploadPath.replace(/\/$/, "");
+          const fullFilePath = `${cleanUploadPath}/${uniqueFileName}`;
+          const encodedFilePath = encodeURIComponent(fullFilePath);
+
+          const apiUrl = `${baseUrl}/api/v4/projects/${projectId}/repository/files/${encodedFilePath}`;
+          const proxyApiUrl = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
+
+          const response = await fetch(proxyApiUrl, {
+            method: "POST",
+            headers: {
+              "PRIVATE-TOKEN": token,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              branch: branch,
+              author_email: "admin@ella.com",
+              author_name: "ëlla Admin",
+              content: base64Data,
+              encoding: "base64",
+              commit_message: `Upload blog image: ${uniqueFileName} via Admin Control Panel`
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            alert(`Upload failed: ${errorData.message || "Unknown error"}`);
+            setUploadingBlogImage(false);
+            return;
+          }
+
+          const projectUrl = `${baseUrl}/api/v4/projects/${projectId}`;
+          const proxyProjectUrl = `https://corsproxy.io/?url=${encodeURIComponent(projectUrl)}`;
+          const projectResponse = await fetch(proxyProjectUrl, {
+            headers: { "PRIVATE-TOKEN": token }
+          });
+          
+          let pathWithNamespace = "";
+          if (projectResponse.ok) {
+            const projectData = await projectResponse.json();
+            pathWithNamespace = projectData.path_with_namespace;
+          }
+
+          if (!pathWithNamespace) {
+            pathWithNamespace = decodeURIComponent(projectId);
+          }
+
+          const publicUrl = `${baseUrl}/${pathWithNamespace}/-/raw/${branch}/${fullFilePath}`;
+
+          setBlogImage(publicUrl);
+          setUploadingBlogImage(false);
+        } catch (uploadErr) {
+          console.error("GitLab upload client error:", uploadErr);
+          alert("Error uploading: " + uploadErr.message);
+          setUploadingBlogImage(false);
+        }
+      };
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Error uploading file: " + err.message);
+      setUploadingBlogImage(false);
+    }
+  };
+
+  // General File Upload for Products
   const handleFileUpload = async (e, idx) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -515,7 +939,7 @@ export default function AdminDashboard() {
       const baseUrl = process.env.NEXT_PUBLIC_GITLAB_BASE_URL || "https://gitlab.com";
 
       if (!token || token === "YOUR_PERSONAL_ACCESS_TOKEN" || !projectId || projectId === "YOUR_PROJECT_ID") {
-        alert("GitLab configuration is missing. Please check your NEXT_PUBLIC_GITLAB_ env variables in .env.local.");
+        alert("GitLab configuration is missing. Please check your env variables.");
         setUploadingIndices(prev => ({ ...prev, [idx]: false }));
         return;
       }
@@ -531,7 +955,6 @@ export default function AdminDashboard() {
           const encodedFilePath = encodeURIComponent(fullFilePath);
 
           const apiUrl = `${baseUrl}/api/v4/projects/${projectId}/repository/files/${encodedFilePath}`;
-          // Route through corsproxy.io to bypass browser CORS block on gitlab.com
           const proxyApiUrl = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
 
           const response = await fetch(proxyApiUrl, {
@@ -557,7 +980,6 @@ export default function AdminDashboard() {
             return;
           }
 
-          // Fetch the project details dynamically to resolve the exact namespace path (for public raw URL)
           const projectUrl = `${baseUrl}/api/v4/projects/${projectId}`;
           const proxyProjectUrl = `https://corsproxy.io/?url=${encodeURIComponent(projectUrl)}`;
           const projectResponse = await fetch(proxyProjectUrl, {
@@ -583,11 +1005,6 @@ export default function AdminDashboard() {
           alert("Error uploading: " + uploadErr.message);
           setUploadingIndices(prev => ({ ...prev, [idx]: false }));
         }
-      };
-      reader.onerror = (error) => {
-        console.error("FileReader error:", error);
-        alert("Error reading file.");
-        setUploadingIndices(prev => ({ ...prev, [idx]: false }));
       };
     } catch (err) {
       console.error("Upload error:", err);
@@ -634,6 +1051,30 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab("products")}
               >
                 Products Manager
+              </button>
+            </li>
+            <li className={styles.menuItem}>
+              <button 
+                className={`${styles.menuBtn} ${activeTab === "blogs" ? styles.activeMenu : ""}`}
+                onClick={() => setActiveTab("blogs")}
+              >
+                Blogs Manager
+              </button>
+            </li>
+            <li className={styles.menuItem}>
+              <button 
+                className={`${styles.menuBtn} ${activeTab === "faqs" ? styles.activeMenu : ""}`}
+                onClick={() => setActiveTab("faqs")}
+              >
+                FAQs Manager
+              </button>
+            </li>
+            <li className={styles.menuItem}>
+              <button 
+                className={`${styles.menuBtn} ${activeTab === "contacts" ? styles.activeMenu : ""}`}
+                onClick={() => setActiveTab("contacts")}
+              >
+                Contacts & Socials
               </button>
             </li>
             <li className={styles.menuItem}>
@@ -692,6 +1133,9 @@ export default function AdminDashboard() {
             <h1 className={styles.panelTitle}>
               {activeTab === "dashboard" && "Analytics Overview"}
               {activeTab === "products" && "Product Catalog Management"}
+              {activeTab === "blogs" && "Blog Posts Management"}
+              {activeTab === "faqs" && "FAQs Management"}
+              {activeTab === "contacts" && "Contacts & Social Details"}
               {activeTab === "orders" && "Customer Orders Tracker"}
               {activeTab === "content" && "Storefront Content Settings"}
               {activeTab === "live" && "Live Real-Time Activity"}
@@ -700,6 +1144,9 @@ export default function AdminDashboard() {
             <p className={styles.panelDesc}>
               {activeTab === "dashboard" && "Performance metrics and sales statistics."}
               {activeTab === "products" && "Create, update, and remove catalog items."}
+              {activeTab === "blogs" && "Publish, edit, and delete dynamic journal articles."}
+              {activeTab === "faqs" && "Manage categories, questions, and answers."}
+              {activeTab === "contacts" && "Update support details, address, and social links."}
               {activeTab === "orders" && "Fulfill, track, and update order statuses."}
               {activeTab === "content" && "Manage banners, promotions, and announcement texts."}
               {activeTab === "live" && "Active shopper carts and database activities."}
@@ -883,7 +1330,256 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 3.3 ORDERS TAB */}
+        {/* 3.3 BLOGS TAB */}
+        {activeTab === "blogs" && (
+          <div className={styles.contentCard}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Blog Posts</h3>
+              <button 
+                className={styles.actionBtn} 
+                onClick={() => {
+                  setEditingBlog(null);
+                  setBlogTitle("");
+                  setBlogExcerpt("");
+                  setBlogCategory("Buying Guide");
+                  setBlogContent("");
+                  setBlogImage("");
+                  setBlogDate("");
+                  setBlogDrawerOpen(true);
+                }}
+              >
+                + Add Blog Post
+              </button>
+            </div>
+
+            <div className={styles.tableResponsive}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blogs.map((b, idx) => {
+                    const imgSource = getImageSrc(b.image);
+                    const isExt = isExternalImage(imgSource);
+                    return (
+                      <tr key={b.slug || idx}>
+                        <td>
+                          <div className={styles.tableImg}>
+                            {isExt ? (
+                              <img src={imgSource} alt={b.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                              <Image src={imgSource || "/assets/Rectangle 13.png"} alt={b.title} fill style={{ objectFit: "cover" }} />
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: "600" }}>{b.title}</td>
+                        <td>{b.category}</td>
+                        <td>{b.date}</td>
+                        <td>
+                          <div className={styles.btnGroup}>
+                            <button 
+                              className={styles.editBtn} 
+                              onClick={() => {
+                                setEditingBlog(b);
+                                setBlogTitle(b.title || "");
+                                setBlogExcerpt(b.excerpt || "");
+                                setBlogCategory(b.category || "Buying Guide");
+                                setBlogContent(b.content || "");
+                                setBlogImage(b.image || "");
+                                setBlogDate(b.date || "");
+                                setBlogDrawerOpen(true);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className={styles.deleteBtn} 
+                              onClick={() => handleDeleteBlog(b.slug)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 3.4 FAQS TAB */}
+        {activeTab === "faqs" && (
+          <div className={styles.contentCard}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Frequently Asked Questions</h3>
+              <button 
+                className={styles.actionBtn} 
+                onClick={() => {
+                  setEditingFaq(null);
+                  setFaqCategory("Product & Quality");
+                  setFaqQuestion("");
+                  setFaqAnswer("");
+                  setFaqDrawerOpen(true);
+                }}
+              >
+                + Add FAQ
+              </button>
+            </div>
+
+            <div className={styles.tableResponsive}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Question</th>
+                    <th>Answer</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {faqs.map((f, idx) => (
+                    <tr key={f.id || idx}>
+                      <td style={{ fontWeight: "600" }}>{f.category}</td>
+                      <td style={{ fontWeight: "600" }}>{f.q || f.question}</td>
+                      <td style={{ maxWidth: "300px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {f.a || f.answer}
+                      </td>
+                      <td>
+                        <div className={styles.btnGroup}>
+                          <button 
+                            className={styles.editBtn} 
+                            onClick={() => {
+                              setEditingFaq(f);
+                              setFaqCategory(f.category || "Product & Quality");
+                              setFaqQuestion(f.q || f.question || "");
+                              setFaqAnswer(f.a || f.answer || "");
+                              setFaqDrawerOpen(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            className={styles.deleteBtn} 
+                            onClick={() => handleDeleteFaq(f.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 3.5 CONTACTS TAB */}
+        {activeTab === "contacts" && (
+          <div className={styles.contentCard}>
+            <h3 className={styles.cardTitle} style={{ marginBottom: "20px" }}>Contacts & Social Accounts</h3>
+            {success && <div className={styles.success}>{success}</div>}
+            {error && <div className={styles.error}>{error}</div>}
+            
+            <form onSubmit={handleSaveContacts} className={styles.form}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Phone Number</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>WhatsApp Number</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Email ID</label>
+                  <input 
+                    type="email" 
+                    className={styles.input} 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Business Hours</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={hours}
+                    onChange={(e) => setHours(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Physical Address</label>
+                <textarea 
+                  className={styles.input} 
+                  style={{ height: "80px" }}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Instagram Link</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Facebook Link</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={facebook}
+                    onChange={(e) => setFacebook(e.target.value)}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Twitter Link</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={twitter}
+                    onChange={(e) => setTwitter(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className={styles.actionBtn} style={{ width: "fit-content", marginTop: "10px" }}>
+                Save Contacts & Social Details
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* 3.6 ORDERS TAB */}
         {activeTab === "orders" && (
           <div className={styles.contentCard}>
             <h3 className={styles.cardTitle} style={{ marginBottom: "20px" }}>Active Customer Orders</h3>
@@ -966,7 +1662,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 3.4 CONTENT TAB */}
+        {/* 3.7 CONTENT TAB */}
         {activeTab === "content" && (
           <div className={styles.contentCard}>
             <h3 className={styles.cardTitle} style={{ marginBottom: "20px" }}>Homepage Content & Promos</h3>
@@ -1012,7 +1708,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 3.5 LIVE MONITOR TAB */}
+        {/* 3.8 LIVE MONITOR TAB */}
         {activeTab === "live" && (
           <div className={styles.contentCard}>
             <h3 className={styles.cardTitle} style={{ marginBottom: "20px" }}>Live Shoppers Monitor</h3>
@@ -1047,7 +1743,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 3.6 METADATA CONFIG TAB */}
+        {/* 3.9 METADATA CONFIG TAB */}
         {activeTab === "metadata" && (
           <div className={styles.contentCard}>
             <h3 className={styles.cardTitle} style={{ marginBottom: "20px" }}>Fast Listing Metadata Options</h3>
@@ -1290,7 +1986,6 @@ export default function AdminDashboard() {
                         placeholder={`Image URL/Path #${idx + 1}`}
                       />
                       
-                      {/* GitLab Uploader Button */}
                       <input 
                         type="file" 
                         id={`upload-${idx}`} 
@@ -1428,6 +2123,204 @@ export default function AdminDashboard() {
                   Save Product
                 </button>
                 <button type="button" className={styles.cancelBtn} onClick={() => setIsDrawerOpen(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. CRUD BLOG DRAWER (MODAL) */}
+      {blogDrawerOpen && (
+        <div className={styles.drawerOverlay} onClick={() => setBlogDrawerOpen(false)}>
+          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.drawerHeader}>
+              <h2 className={styles.drawerTitle}>
+                {editingBlog ? `Edit Post: ${editingBlog.title}` : "Write New Journal Entry"}
+              </h2>
+              <button className={styles.closeBtn} onClick={() => setBlogDrawerOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            {error && <div className={styles.error}>{error}</div>}
+            {success && <div className={styles.success}>{success}</div>}
+
+            <form onSubmit={handleBlogSubmit} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Blog Title *</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  value={blogTitle}
+                  onChange={(e) => setBlogTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Category</label>
+                  <select 
+                    className={styles.input} 
+                    value={blogCategory}
+                    onChange={(e) => setBlogCategory(e.target.value)}
+                  >
+                    <option value="Buying Guide">Buying Guide</option>
+                    <option value="Jewelry Care">Jewelry Care</option>
+                    <option value="Custom Design">Custom Design</option>
+                    <option value="Trends">Trends</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Date Label</label>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={blogDate}
+                    onChange={(e) => setBlogDate(e.target.value)}
+                    placeholder="e.g. June 5, 2026 (or blank for today)"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Blog Image URL / Upload</label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={blogImage}
+                    onChange={(e) => setBlogImage(e.target.value)}
+                    placeholder="Image URL or upload a file"
+                  />
+                  <input 
+                    type="file" 
+                    id="upload-blog-img" 
+                    style={{ display: "none" }} 
+                    onChange={handleBlogFileUpload} 
+                    accept="image/*" 
+                  />
+                  {uploadingBlogImage ? (
+                    <span style={{ fontSize: "0.75rem", color: "#888", fontStyle: "italic", whiteSpace: "nowrap" }}>
+                      Uploading...
+                    </span>
+                  ) : (
+                    <label 
+                      htmlFor="upload-blog-img" 
+                      style={{
+                        backgroundColor: "#f5f5f5",
+                        border: "1px solid #eae6df",
+                        color: "#1a1a1a",
+                        padding: "8px 12px",
+                        fontSize: "0.8rem",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        borderRadius: "2px",
+                        userSelect: "none",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      📁 Upload
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Excerpt (Short summary)</label>
+                <textarea 
+                  className={styles.input} 
+                  style={{ height: "60px" }}
+                  value={blogExcerpt}
+                  onChange={(e) => setBlogExcerpt(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Full Article Content *</label>
+                <textarea 
+                  className={styles.input} 
+                  style={{ height: "200px" }}
+                  value={blogContent}
+                  onChange={(e) => setBlogContent(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.formActions}>
+                <button type="submit" className={styles.submitBtn}>
+                  Save Blog Post
+                </button>
+                <button type="button" className={styles.cancelBtn} onClick={() => setBlogDrawerOpen(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. CRUD FAQ DRAWER (MODAL) */}
+      {faqDrawerOpen && (
+        <div className={styles.drawerOverlay} onClick={() => setFaqDrawerOpen(false)}>
+          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.drawerHeader}>
+              <h2 className={styles.drawerTitle}>
+                {editingFaq ? "Edit FAQ" : "Add FAQ Item"}
+              </h2>
+              <button className={styles.closeBtn} onClick={() => setFaqDrawerOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            {error && <div className={styles.error}>{error}</div>}
+            {success && <div className={styles.success}>{success}</div>}
+
+            <form onSubmit={handleFaqSubmit} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>FAQ Category *</label>
+                <select 
+                  className={styles.input} 
+                  value={faqCategory}
+                  onChange={(e) => setFaqCategory(e.target.value)}
+                >
+                  <option value="Product & Quality">Product & Quality</option>
+                  <option value="Orders & Shipping">Orders & Shipping</option>
+                  <option value="Returns & Exchanges">Returns & Exchanges</option>
+                  <option value="Payment & Pricing">Payment & Pricing</option>
+                  <option value="General Support">General Support</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Question *</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  value={faqQuestion}
+                  onChange={(e) => setFaqQuestion(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Answer *</label>
+                <textarea 
+                  className={styles.input} 
+                  style={{ height: "120px" }}
+                  value={faqAnswer}
+                  onChange={(e) => setFaqAnswer(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.formActions}>
+                <button type="submit" className={styles.submitBtn}>
+                  Save FAQ
+                </button>
+                <button type="button" className={styles.cancelBtn} onClick={() => setFaqDrawerOpen(false)}>
                   Cancel
                 </button>
               </div>

@@ -1,32 +1,65 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { products as mockProducts, categories as mockCategories } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/context/CartContext";
 import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import styles from "./shop.module.css";
+
+const PRODUCTS_PER_PAGE = 12;
+const CACHE_KEY = "ella_products_cache";
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// ── Skeleton card component ───────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className={styles.skeletonCard}>
+      <div className={styles.skeletonImage} />
+      <div className={styles.skeletonLine} style={{ width: "60%", marginTop: 12 }} />
+      <div className={styles.skeletonLine} style={{ width: "40%", marginTop: 8 }} />
+    </div>
+  );
+}
 
 function ShopContent() {
   const searchParams = useSearchParams();
   const { wishlist } = useCart();
-  
+
   const search = searchParams.get("search") || "";
   const showWishlistOnly = searchParams.get("wishlist") === "true";
   const collectionParam = searchParams.get("collection") || "";
-  
+
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("default");
-  
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [productList, setProductList] = useState([]);
   const [categoryList, setCategoryList] = useState(["All"]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from Firestore or fallback in real-time
-  useEffect(() => {
+  // ── Load products (with localStorage cache) ───────────────────────────────
+  const loadProducts = useCallback(async () => {
+    // 1. Try cache first
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const { data, cats, ts } = JSON.parse(raw);
+        if (Date.now() - ts < CACHE_TTL_MS && data.length > 0) {
+          setProductList(data);
+          setCategoryList(cats);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (_) {
+      // Ignore corrupt cache
+    }
+
+    // 2. No Firebase? Use mock data immediately
     if (!isFirebaseConfigured) {
       setProductList(mockProducts);
       setCategoryList(mockCategories);
@@ -34,55 +67,67 @@ function ShopContent() {
       return;
     }
 
-    setLoading(true);
-    const unsub = onSnapshot(
-      collection(db, "products"),
-      (querySnapshot) => {
-        const fetched = [];
-        const cats = new Set(["All"]);
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          fetched.push({ id: doc.id, ...data });
-          if (data.category) cats.add(data.category);
-        });
+    // 3. Fetch from Firestore (one-shot, no persistent listener)
+    try {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      const fetched = [];
+      const cats = new Set(["All"]);
 
-        if (fetched.length === 0) {
-          setProductList(mockProducts);
-          setCategoryList(mockCategories);
-        } else {
-          setProductList(fetched);
-          setCategoryList(Array.from(cats));
-        }
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Error loading products from Firestore:", err);
-        setProductList(mockProducts);
-        setCategoryList(mockCategories);
-        setLoading(false);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        fetched.push({ id: doc.id, ...data });
+        if (data.category) cats.add(data.category);
+      });
+
+      const finalProducts = fetched.length > 0 ? fetched : mockProducts;
+      const finalCats = fetched.length > 0 ? Array.from(cats) : mockCategories;
+
+      setProductList(finalProducts);
+      setCategoryList(finalCats);
+
+      // Save to cache
+      try {
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: finalProducts, cats: finalCats, ts: Date.now() })
+        );
+      } catch (_) {
+        // Storage quota exceeded – ignore
       }
-    );
-
-    return () => unsub();
+    } catch (err) {
+      console.error("Error loading products:", err);
+      setProductList(mockProducts);
+      setCategoryList(mockCategories);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Determine breadcrumbs
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, sortBy, search, collectionParam, showWishlistOnly]);
+
+  // ── Breadcrumbs ───────────────────────────────────────────────────────────
   const breadcrumbs = [
     { label: "Home", href: "/" },
-    showWishlistOnly 
+    showWishlistOnly
       ? { label: "Wishlist", href: "/shop?wishlist=true" }
-      : search 
+      : search
         ? { label: `Search: "${search}"`, href: `/shop?search=${search}` }
         : collectionParam
           ? { label: collectionParam, href: `/shop?collection=${collectionParam}` }
-          : { label: "Shop", href: "/shop" }
+          : { label: "Shop", href: "/shop" },
   ];
 
-  // Title and description
-  const pageTitle = showWishlistOnly 
-    ? "My Wishlist" 
-    : search 
-      ? `Search Results for "${search}"` 
+  const pageTitle = showWishlistOnly
+    ? "My Wishlist"
+    : search
+      ? `Search Results for "${search}"`
       : collectionParam
         ? collectionParam
         : "Our Collection";
@@ -95,48 +140,78 @@ function ShopContent() {
         ? `Exquisite designs from our ${collectionParam}`
         : "Discover our handcrafted pieces, designed to celebrate life's most precious moments";
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "#707070", fontStyle: "italic" }}>Loading Ella Collection...</p>
-      </div>
-    );
-  }
-
-  // Filter products
+  // ── Filter & Sort ─────────────────────────────────────────────────────────
   let filtered = [...productList];
 
-  // Filter by wishlist
   if (showWishlistOnly) {
-    // Note: productList IDs might be numbers (from mocks) or strings (from firestore)
     filtered = filtered.filter((p) => wishlist.includes(p.id));
   }
-
-  // Filter by collection
   if (collectionParam) {
-    filtered = filtered.filter((p) => p.collection && p.collection.toLowerCase() === collectionParam.toLowerCase());
+    filtered = filtered.filter(
+      (p) => p.collection && p.collection.toLowerCase() === collectionParam.toLowerCase()
+    );
   }
-
-  // Filter by category
   if (activeCategory !== "All") {
     filtered = filtered.filter((p) => p.category === activeCategory);
   }
-
-  // Filter by search query
   if (search) {
     const query = search.toLowerCase();
     filtered = filtered.filter(
-      (p) => 
-        (p.name && p.name.toLowerCase().includes(query)) || 
+      (p) =>
+        (p.name && p.name.toLowerCase().includes(query)) ||
         (p.category && p.category.toLowerCase().includes(query)) ||
         (p.description && p.description.toLowerCase().includes(query))
     );
   }
 
-  // Sort
   if (sortBy === "price-low") filtered.sort((a, b) => a.price - b.price);
   if (sortBy === "price-high") filtered.sort((a, b) => b.price - a.price);
   if (sortBy === "name") filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * PRODUCTS_PER_PAGE;
+  const paginated = filtered.slice(pageStart, pageStart + PRODUCTS_PER_PAGE);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 320, behavior: "smooth" });
+  };
+
+  // Build page numbers with ellipsis
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (safePage > 3) pages.push("…");
+      for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) {
+        pages.push(i);
+      }
+      if (safePage < totalPages - 2) pages.push("…");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  // ── Skeleton loading state ────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.skeletonTitle} />
+          <div className={styles.skeletonSubtitle} />
+        </div>
+        <div className={styles.grid}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -146,7 +221,7 @@ function ShopContent() {
         className={styles.header}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
       >
         <h1 className={styles.title}>{pageTitle}</h1>
         <p className={styles.subtitle}>{pageSubtitle}</p>
@@ -184,22 +259,72 @@ function ShopContent() {
       </div>
 
       <p className={styles.resultCount}>
-        Showing {filtered.length} product{filtered.length !== 1 ? "s" : ""}
+        Showing {pageStart + 1}–{Math.min(pageStart + PRODUCTS_PER_PAGE, filtered.length)} of{" "}
+        {filtered.length} product{filtered.length !== 1 ? "s" : ""}
       </p>
 
-      <div className={styles.grid}>
-        {filtered.map((product, idx) => (
-          <ProductCard key={product.id} product={product} index={idx} />
-        ))}
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${safePage}-${activeCategory}-${sortBy}`}
+          className={styles.grid}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {paginated.map((product, idx) => (
+            <ProductCard key={product.id} product={product} index={idx} />
+          ))}
+        </motion.div>
+      </AnimatePresence>
 
       {filtered.length === 0 && (
         <div className={styles.empty}>
           <p>
-            {showWishlistOnly 
-              ? "Your wishlist is empty. Explore our shop and add some items!" 
+            {showWishlistOnly
+              ? "Your wishlist is empty. Explore our shop and add some items!"
               : "No products found matching your criteria."}
           </p>
+        </div>
+      )}
+
+      {/* ── Pagination Controls ── */}
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageBtn}
+            onClick={() => handlePageChange(safePage - 1)}
+            disabled={safePage === 1}
+            aria-label="Previous page"
+          >
+            ‹ Prev
+          </button>
+
+          {getPageNumbers().map((p, i) =>
+            p === "…" ? (
+              <span key={`ellipsis-${i}`} className={styles.ellipsis}>
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                className={`${styles.pageBtn} ${safePage === p ? styles.pageActive : ""}`}
+                onClick={() => handlePageChange(p)}
+                aria-label={`Page ${p}`}
+              >
+                {p}
+              </button>
+            )
+          )}
+
+          <button
+            className={styles.pageBtn}
+            onClick={() => handlePageChange(safePage + 1)}
+            disabled={safePage === totalPages}
+            aria-label="Next page"
+          >
+            Next ›
+          </button>
         </div>
       )}
     </div>
@@ -209,11 +334,21 @@ function ShopContent() {
 export default function ShopPage() {
   return (
     <div className={styles.page}>
-      <Suspense fallback={
-        <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <p>Loading Collection...</p>
-        </div>
-      }>
+      <Suspense
+        fallback={
+          <div className={styles.container}>
+            <div className={styles.grid}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className={styles.skeletonCard}>
+                  <div className={styles.skeletonImage} />
+                  <div className={styles.skeletonLine} style={{ width: "60%", marginTop: 12 }} />
+                  <div className={styles.skeletonLine} style={{ width: "40%", marginTop: 8 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        }
+      >
         <ShopContent />
       </Suspense>
     </div>
