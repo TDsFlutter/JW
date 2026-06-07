@@ -531,8 +531,10 @@ export default function AdminDashboard() {
           const encodedFilePath = encodeURIComponent(fullFilePath);
 
           const apiUrl = `${baseUrl}/api/v4/projects/${projectId}/repository/files/${encodedFilePath}`;
+          // Route through corsproxy.io to bypass browser CORS block on gitlab.com
+          const proxyApiUrl = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
 
-          const response = await fetch(apiUrl, {
+          const response = await fetch(proxyApiUrl, {
             method: "POST",
             headers: {
               "PRIVATE-TOKEN": token,
@@ -557,7 +559,8 @@ export default function AdminDashboard() {
 
           // Fetch the project details dynamically to resolve the exact namespace path (for public raw URL)
           const projectUrl = `${baseUrl}/api/v4/projects/${projectId}`;
-          const projectResponse = await fetch(projectUrl, {
+          const proxyProjectUrl = `https://corsproxy.io/?url=${encodeURIComponent(projectUrl)}`;
+          const projectResponse = await fetch(proxyProjectUrl, {
             headers: { "PRIVATE-TOKEN": token }
           });
           
