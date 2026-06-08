@@ -640,6 +640,7 @@
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border-light);
+  padding-bottom: 8px;
 }
 
 .wishBtn {
@@ -668,6 +669,14 @@
   background: rgba(155, 14, 46, 0.04);
 }
 
+/* ===== POLICY ACCORDION SECTION (full-width below product layout) ===== */
+.policyAccordionSection {
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  padding: 4px 0 8px;
+  margin-bottom: 0;
+  max-width: 860px;
+}
 
 /* ===== TRUST SECTION (TGL + Why Moissanite) ===== */
 .trustSection {

@@ -697,36 +697,6 @@ function ProductDetail({ product, effectiveStock }) {
               ))}
             </div>
 
-            {/* Accordions */}
-            <div className={styles.accordion}>
-              {accordionSections.map((section) => (
-                <div key={section.key} className={styles.accordionItem}>
-                  <button
-                    className={`${styles.accordionHeader} ${openAccordion === section.key ? styles.accordionOpen : ""}`}
-                    onClick={() => toggleAccordion(section.key)}
-                  >
-                    <span>{section.title}</span>
-                    <span className={styles.accordionIcon}>
-                      {openAccordion === section.key ? "∧" : "∨"}
-                    </span>
-                  </button>
-                  <AnimatePresence>
-                    {openAccordion === section.key && (
-                      <motion.div
-                        className={styles.accordionBody}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {section.content}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </div>
-
             {/* Wishlist Toggle */}
             <div className={styles.wishlistRow}>
               <button
@@ -741,6 +711,36 @@ function ProductDetail({ product, effectiveStock }) {
               </button>
             </div>
           </motion.div>
+        </div>
+
+        {/* ===== PRODUCT POLICY ACCORDIONS (full width below 2-col layout) ===== */}
+        <div className={styles.policyAccordionSection}>
+          {accordionSections.map((section) => (
+            <div key={section.key} className={styles.accordionItem}>
+              <button
+                className={`${styles.accordionHeader} ${openAccordion === section.key ? styles.accordionOpen : ""}`}
+                onClick={() => toggleAccordion(section.key)}
+              >
+                <span>{section.title}</span>
+                <span className={styles.accordionIcon}>
+                  {openAccordion === section.key ? "∧" : "∨"}
+                </span>
+              </button>
+              <AnimatePresence>
+                {openAccordion === section.key && (
+                  <motion.div
+                    className={styles.accordionBody}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {section.content}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
         </div>
 
         {/* ===== TGL REPORT + WHY TRUST US ===== */}
