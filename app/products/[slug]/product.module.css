@@ -668,39 +668,6 @@
   background: rgba(155, 14, 46, 0.04);
 }
 
-/* ===== GALLERY COLLAGE STRIP ===== */
-.galleryStrip {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 12px;
-  margin: 0 0 60px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.stripItem {
-  background: var(--bg-cream);
-  overflow: hidden;
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
-  min-height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.stripItem:hover .stripImg {
-  transform: scale(1.05);
-}
-
-.stripImg {
-  transition: transform var(--transition-base);
-  object-fit: contain;
-  width: 100%;
-  height: auto;
-}
 
 /* ===== TRUST SECTION (TGL + Why Moissanite) ===== */
 .trustSection {
@@ -708,7 +675,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 48px;
   margin-bottom: 64px;
-  padding: 48px 0;
+  padding: 60px 0 48px;
   border-top: 1px solid var(--border-light);
 }
 

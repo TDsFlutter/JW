@@ -743,39 +743,6 @@ function ProductDetail({ product, effectiveStock }) {
           </motion.div>
         </div>
 
-        {/* ===== GALLERY COLLAGE STRIP ===== */}
-        <div className={styles.galleryStrip}>
-          {product.images.map((img, idx) => {
-            const src = getImageSrc(img);
-            const isExt = isExternalImage(src);
-            return (
-              <div
-                key={idx}
-                className={`${styles.stripItem} ${idx === 0 ? styles.stripLarge : ""}`}
-                onClick={() => setSelectedImage(idx)}
-              >
-                {isExt ? (
-                  <img
-                    src={src}
-                    alt={`${product.name} angle ${idx + 1}`}
-                    className={styles.stripImg}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                  />
-                ) : (
-                  <Image
-                    src={src}
-                    alt={`${product.name} angle ${idx + 1}`}
-                    width={400}
-                    height={400}
-                    className={styles.stripImg}
-                    style={{ objectFit: "contain" }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
         {/* ===== TGL REPORT + WHY TRUST US ===== */}
         <div className={styles.trustSection}>
           <motion.div
