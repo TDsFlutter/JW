@@ -72,6 +72,7 @@ export default function AdminDashboard() {
   const [uploadingIndices, setUploadingIndices] = useState({});
   const [formSelectedSizes, setFormSelectedSizes] = useState([]);
   const [formSelectedMetals, setFormSelectedMetals] = useState([]);
+  const [formSpecs, setFormSpecs] = useState([]);
 
   // Content edit states
   const [heroTitle, setHeroTitle] = useState("");
@@ -436,6 +437,36 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, [activeTab]);
 
+  // CRUD Handlers for Product Specifications
+  const handleAddSpec = (label = "", value = "") => {
+    setFormSpecs(prev => [
+      ...prev,
+      { id: `spec_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, label, value }
+    ]);
+  };
+
+  const handleSpecChange = (id, field, value) => {
+    setFormSpecs(prev => prev.map(spec => 
+      spec.id === id ? { ...spec, [field]: value } : spec
+    ));
+  };
+
+  const handleDeleteSpec = (id) => {
+    setFormSpecs(prev => prev.filter(spec => spec.id !== id));
+  };
+
+  const handleMoveSpec = (index, direction) => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === formSpecs.length - 1) return;
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    const updated = [...formSpecs];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    setFormSpecs(updated);
+  };
+
   // Open Drawer for Add Product
   const handleAddProductClick = () => {
     setEditingProduct(null);
@@ -450,6 +481,14 @@ export default function AdminDashboard() {
     setFormImages([""]);
     setFormSelectedSizes([]);
     setFormSelectedMetals([]);
+    setFormSpecs([
+      { id: "1", label: "SKU Number", value: "" },
+      { id: "2", label: "Style", value: "" },
+      { id: "3", label: "Metal Type", value: "925 Sterling Silver" },
+      { id: "4", label: "Stone Type", value: "Premium AAA Grade Moissanite" },
+      { id: "5", label: "Carat Weight", value: "" },
+      { id: "6", label: "Certification", value: "TGL Certified" }
+    ]);
     setError("");
     setSuccess("");
     setIsDrawerOpen(true);
@@ -476,6 +515,36 @@ export default function AdminDashboard() {
 
     setFormSelectedSizes(product.sizes || []);
     setFormSelectedMetals(product.metals || []);
+
+    if (product.specs && product.specs.length > 0) {
+      setFormSpecs(product.specs.map((spec, idx) => ({
+        id: `spec_${idx}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        label: spec.label || "",
+        value: spec.value || ""
+      })));
+    } else if (product.details) {
+      const converted = Object.entries(product.details).map(([key, val], idx) => {
+        const humanizedLabel = key
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, str => str.toUpperCase());
+        return {
+          id: `spec_${idx}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          label: humanizedLabel,
+          value: val || ""
+        };
+      });
+      setFormSpecs(converted);
+    } else {
+      setFormSpecs([
+        { id: "1", label: "SKU Number", value: `ELLA-${product.id || '100'}012` },
+        { id: "2", label: "Style", value: product.name || "" },
+        { id: "3", label: "Metal Type", value: "925 Sterling Silver" },
+        { id: "4", label: "Stone Type", value: "Premium AAA Grade Moissanite" },
+        { id: "5", label: "Carat Weight", value: `${(product.id * 0.4 || 1.2).toFixed(2)} Carats` },
+        { id: "6", label: "Certification", value: "TGL Certified" }
+      ]);
+    }
+
     setError("");
     setSuccess("");
     setIsDrawerOpen(true);
@@ -520,6 +589,9 @@ export default function AdminDashboard() {
         : ["/assets/image 1.png"],
       sizes: formSelectedSizes,
       metals: formSelectedMetals,
+      specs: formSpecs
+        .map(s => ({ label: s.label.trim(), value: s.value.trim() }))
+        .filter(s => s.label !== ""),
     };
 
     if (!isFirebaseConfigured) {
@@ -2105,6 +2177,119 @@ export default function AdminDashboard() {
                       {plat}
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Product Specifications</label>
+                <div className={styles.specsEditorContainer}>
+                  <p style={{ fontSize: "0.75rem", color: "#707070", marginBottom: "12px", fontFamily: "var(--font-lato)" }}>
+                    Manage the technical specifications of this product. Drag-and-drop is replaced by Move Up/Down controls. Quick add templates are below.
+                  </p>
+                  
+                  {/* Quick-Add Suggestions */}
+                  <div className={styles.suggestedChipsRow}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#333", display: "block", marginBottom: "6px" }}>
+                      Click to Add Suggested Label:
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+                      {["SKU Number", "Style", "Metal Type", "Metal Color", "Stone Type", "Stone Shape", "Cut Grade", "Clarity", "Carat Weight", "Setting Type", "Dimensions", "Weight", "Certification", "Brand", "Country of Origin", "Pearl Type", "Finish"].map(lbl => (
+                        <button
+                          key={lbl}
+                          type="button"
+                          className={styles.suggestionChip}
+                          onClick={() => handleAddSpec(lbl, "")}
+                        >
+                          + {lbl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Specs Rows */}
+                  <div className={styles.specsList} style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+                    {formSpecs.map((spec, index) => (
+                      <div key={spec.id} className={styles.specRow} style={{ display: "flex", gap: "8px", alignItems: "center", backgroundColor: "#faf9f6", padding: "8px", border: "1px solid #eae6df", borderRadius: "2px" }}>
+                        
+                        {/* Reorder Buttons */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <button
+                            type="button"
+                            className={styles.specMoveBtn}
+                            onClick={() => handleMoveSpec(index, "up")}
+                            disabled={index === 0}
+                            style={{ padding: "2px 4px", fontSize: "0.65rem", cursor: index === 0 ? "not-allowed" : "pointer", opacity: index === 0 ? 0.3 : 0.8 }}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.specMoveBtn}
+                            onClick={() => handleMoveSpec(index, "down")}
+                            disabled={index === formSpecs.length - 1}
+                            style={{ padding: "2px 4px", fontSize: "0.65rem", cursor: index === formSpecs.length - 1 ? "not-allowed" : "pointer", opacity: index === formSpecs.length - 1 ? 0.3 : 0.8 }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        {/* Label Input */}
+                        <input
+                          type="text"
+                          placeholder="Label (e.g. Clarity)"
+                          value={spec.label}
+                          onChange={(e) => handleSpecChange(spec.id, "label", e.target.value)}
+                          className={styles.input}
+                          style={{ flex: 1, padding: "8px 10px", fontSize: "0.85rem", backgroundColor: "#ffffff" }}
+                        />
+
+                        {/* Value Input */}
+                        <input
+                          type="text"
+                          placeholder="Value (e.g. VVS1)"
+                          value={spec.value}
+                          onChange={(e) => handleSpecChange(spec.id, "value", e.target.value)}
+                          className={styles.input}
+                          style={{ flex: 1.5, padding: "8px 10px", fontSize: "0.85rem", backgroundColor: "#ffffff" }}
+                        />
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSpec(spec.id)}
+                          style={{
+                            backgroundColor: "#fff1f0",
+                            color: "#f5222d",
+                            border: "1px solid #ffa39e",
+                            padding: "6px 10px",
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                            borderRadius: "2px"
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAddSpec("", "")}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      backgroundColor: "#faf9f6",
+                      color: "#1a1a1a",
+                      border: "1px dashed #b59410",
+                      fontWeight: "bold",
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                      textAlign: "center"
+                    }}
+                  >
+                    + Add Custom Specification Row
+                  </button>
                 </div>
               </div>
 

@@ -111,6 +111,35 @@ function ProductDetail({ product, effectiveStock }) {
   const [addedToCart, setAddedToCart] = useState(false);
   const imageRef = useRef(null);
 
+  // Dynamic Product Specifications & fallback logic
+  const getProductSpecs = () => {
+    if (product.specs && product.specs.length > 0) {
+      return product.specs.filter(s => s.value && s.value.trim() !== "");
+    }
+    // Fallback to product.details if present
+    if (product.details) {
+      return Object.entries(product.details)
+        .map(([key, val]) => {
+          const label = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase());
+          return { label, value: val };
+        })
+        .filter(s => s.value && s.value.trim() !== "");
+    }
+    // Fallback to default hardcoded details
+    return [
+      { label: "SKU Number", value: `ELLA-${product.id || '100'}012` },
+      { label: "Style", value: product.name },
+      { label: "Metal Type", value: "925 Sterling Silver" },
+      { label: "Stone Type", value: "Premium AAA Grade Moissanite" },
+      { label: "Carat Weight", value: `${(product.id * 0.4 || 1.2).toFixed(2)} Carats` },
+      { label: "Certification", value: "TGL Certified" }
+    ].filter(s => s.value && s.value.trim() !== "");
+  };
+
+  const productSpecs = getProductSpecs();
+
   // Reviews state
   const [reviews, setReviews] = useState([]);
   const [reviewTitle, setReviewTitle] = useState("");
@@ -361,32 +390,26 @@ function ProductDetail({ product, effectiveStock }) {
       title: "Product Description",
       content: (
         <div>
-          <div className={styles.specTableSection}>
-            <div className={styles.specTableHeader}>★ ITEM DETAILS</div>
-            <table className={styles.specTable}>
-              <tbody>
-                <tr><td>SKU No</td><td>LR {product.id}012</td></tr>
-                <tr><td>Style</td><td>{product.name}</td></tr>
-                <tr><td>Moissanite Total Weight</td><td>{(product.id * 0.4).toFixed(3)} CT</td></tr>
-                <tr><td>Center Moissanite Weight</td><td>0.90 CT</td></tr>
-                <tr><td>Product Weight</td><td>3.50 GM (Approx)</td></tr>
-                <tr><td>Metal Type</td><td>92.5% Sterling Silver</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div className={styles.specTableSection}>
-            <div className={styles.specTableHeader}>★ DIAMOND DETAILS</div>
-            <table className={styles.specTable}>
-              <tbody>
-                <tr><td>Stone Type</td><td>Moissanite Diamond</td></tr>
-                <tr><td>Stone Shape</td><td>Round Brilliant</td></tr>
-                <tr><td>Color Grade</td><td>D-E (Colorless)</td></tr>
-                <tr><td>Clarity Grade</td><td>VVS1-VVS2</td></tr>
-                <tr><td>Cut Grade</td><td>Excellent</td></tr>
-                <tr><td>Certification</td><td>TGL Certified</td></tr>
-              </tbody>
-            </table>
-          </div>
+          {product.description && (
+            <p className={styles.accordionText} style={{ marginBottom: "16px" }}>
+              {product.description}
+            </p>
+          )}
+          {productSpecs.length > 0 && (
+            <div className={styles.specTableSection}>
+              <div className={styles.specTableHeader}>★ TECHNICAL SPECIFICATIONS</div>
+              <table className={styles.specTable}>
+                <tbody>
+                  {productSpecs.map((spec, idx) => (
+                    <tr key={idx}>
+                      <td>{spec.label}</td>
+                      <td>{spec.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ),
     },
@@ -776,6 +799,25 @@ function ProductDetail({ product, effectiveStock }) {
             </div>
           </div>
         </div>
+
+        {/* ===== PRODUCT SPECIFICATIONS SECTION ===== */}
+        {productSpecs.length > 0 && (
+          <div className={styles.specsSection}>
+            <div className={styles.specsHeaderArea}>
+              <h2 className={styles.specsSectionTitle}>Specifications</h2>
+              <p className={styles.specsSectionSubtitle}>Technical details and premium attributes of this fine jewelry piece</p>
+              <div className={styles.specsLine}></div>
+            </div>
+            <div className={styles.specsGrid}>
+              {productSpecs.map((spec, idx) => (
+                <div key={idx} className={styles.specGridItem}>
+                  <span className={styles.specGridLabel}>{spec.label}</span>
+                  <span className={styles.specGridValue}>{spec.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ===== TGL REPORT + WHY TRUST US ===== */}
         <div className={styles.trustSection}>

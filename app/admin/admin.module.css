@@ -525,3 +525,75 @@
   color: #555555;
   margin-top: 4px;
 }
+
+/* Product Specifications Editor */
+.specsEditorContainer {
+  border: 1px solid #eae6df;
+  padding: 16px;
+  background-color: #faf9f6;
+  border-radius: 4px;
+}
+
+.suggestedChipsRow {
+  margin-bottom: 12px;
+}
+
+.suggestionChip {
+  background-color: #ffffff;
+  border: 1.5px solid #eae6df;
+  color: #333333;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-lato), sans-serif;
+}
+
+.suggestionChip:hover {
+  border-color: #b59410;
+  color: #b59410;
+  background-color: #fcfbfa;
+}
+
+.specsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.specRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 8px;
+  border: 1px solid #eae6df;
+  border-radius: 2px;
+}
+
+.specMoveBtn {
+  background: #f7f6f2;
+  border: 1px solid #eae6df;
+  color: #555555;
+  width: 20px;
+  height: 18px;
+  font-size: 0.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.specMoveBtn:hover:not(:disabled) {
+  background-color: #eae6df;
+  color: #1a1a1a;
+}
+
+.specMoveBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
