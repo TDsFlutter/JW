@@ -390,25 +390,14 @@ function ProductDetail({ product, effectiveStock }) {
       title: "Product Description",
       content: (
         <div>
-          {product.description && (
-            <p className={styles.accordionText} style={{ marginBottom: "16px" }}>
+          {product.description ? (
+            <p className={styles.accordionText}>
               {product.description}
             </p>
-          )}
-          {productSpecs.length > 0 && (
-            <div className={styles.specTableSection}>
-              <div className={styles.specTableHeader}>★ TECHNICAL SPECIFICATIONS</div>
-              <table className={styles.specTable}>
-                <tbody>
-                  {productSpecs.map((spec, idx) => (
-                    <tr key={idx}>
-                      <td>{spec.label}</td>
-                      <td>{spec.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          ) : (
+            <p className={styles.accordionText} style={{ fontStyle: "italic" }}>
+              No description available for this product.
+            </p>
           )}
         </div>
       ),
