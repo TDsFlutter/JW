@@ -66,14 +66,24 @@
     text-align: center;
     flex: 1;
   }
+
+  .saleBtn {
+    padding: 3px 12px;
+    font-size: 10px;
+  }
 }
 
 @media (max-width: 480px) {
   .inner {
     justify-content: center;
-    gap: 12px;
+    gap: 8px;
+    padding: 0 12px;
   }
   .center {
     font-size: 11px;
+  }
+  .saleBtn {
+    padding: 2px 8px;
+    font-size: 9px;
   }
 }

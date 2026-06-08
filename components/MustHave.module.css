@@ -146,10 +146,10 @@
   box-shadow: 0 4px 16px rgba(155, 14, 46, 0.4);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .content {
     grid-template-columns: 1fr;
-    gap: 30px;
+    gap: 36px;
   }
 
   .textSection {
@@ -159,18 +159,24 @@
   }
 
   .overlayCard {
-    bottom: -10px;
-    left: 10px;
-    max-width: 260px;
+    bottom: 15px;
+    left: 15px;
+    max-width: 280px;
   }
 }
 
 @media (max-width: 480px) {
   .title {
-    font-size: 30px;
+    font-size: 26px;
+    margin-bottom: 20px;
   }
 
   .overlayCard {
     display: none;
+  }
+  
+  .shopBtn {
+    padding: 12px 30px;
+    font-size: 12px;
   }
 }

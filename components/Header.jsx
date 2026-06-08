@@ -19,6 +19,7 @@ const navItems = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { cartCount, wishlist, setCartOpen } = useCart();
   const { currentUser } = useAuth();
@@ -68,6 +69,13 @@ export default function Header() {
         </div>
 
         <div className={styles.headerActions}>
+          <button 
+            className={`${styles.iconBtn} ${styles.mobileSearchToggle}`} 
+            aria-label="Toggle search"
+            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+          >
+            <Image src={`${BASE_PATH}/assets/search.png`} alt="Search" width={22} height={22} />
+          </button>
           <Link href="/shop?wishlist=true" className={styles.iconBtn} aria-label="Wishlist">
             <Image src={`${BASE_PATH}/assets/heart.png`} alt="Wishlist" width={22} height={22} />
             {wishlist.length > 0 && (
@@ -101,6 +109,21 @@ export default function Header() {
         </button>
       </div>
 
+      <div className={`${styles.mobileSearchBar} ${mobileSearchOpen ? styles.mobileSearchOpen : ""}`}>
+        <form onSubmit={handleSearch} className={styles.mobileSearchForm}>
+          <input
+            type="text"
+            placeholder="Search products..."
+            className={styles.mobileSearchInput}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button type="submit" className={styles.mobileSearchSubmit} aria-label="Submit Search">
+            <Image src={`${BASE_PATH}/assets/search.png`} alt="Search" width={16} height={16} />
+          </button>
+        </form>
+      </div>
+
       <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ""}`} id="main-nav">
         <ul className={styles.navList}>
           {navItems.map((item, idx) => (
@@ -112,6 +135,10 @@ export default function Header() {
           ))}
         </ul>
       </nav>
+      <div 
+        className={`${styles.navBackdrop} ${mobileOpen ? styles.navBackdropVisible : ""}`}
+        onClick={() => setMobileOpen(false)}
+      />
     </header>
   );
 }

@@ -134,3 +134,27 @@
   .grid { grid-template-columns: 1fr; gap: 40px; }
   .row { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 60px 16px 40px;
+  }
+  .heroTitle {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+  .heroSub {
+    font-size: 0.9rem;
+  }
+  .container {
+    padding: 30px 16px;
+  }
+  .infoTitle, .formTitle {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+  }
+  .submitBtn {
+    width: 100%;
+    padding: 14px 20px;
+  }
+}

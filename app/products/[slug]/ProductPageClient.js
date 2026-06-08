@@ -630,9 +630,6 @@ function ProductDetail({ product, effectiveStock }) {
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </div>
-              <button className={styles.findSizeLink}>
-                🔍 FIND MY RING SIZE ↗
-              </button>
             </div>
 
             {/* Actions */}

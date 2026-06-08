@@ -129,3 +129,43 @@
   .valuesGrid { grid-template-columns: 1fr; }
   .statsRow { gap: 30px; }
 }
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 60px 16px 40px;
+  }
+  .heroTitle {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+  .heroSub {
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+  }
+  .section {
+    padding: 40px 0;
+  }
+  .sectionTitle {
+    font-size: 1.4rem;
+  }
+  .sectionText {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .statsRow {
+    gap: 20px;
+  }
+  .statNumber {
+    font-size: 1.8rem;
+  }
+  .ctaSection {
+    padding: 40px 16px;
+  }
+  .ctaTitle {
+    font-size: 1.35rem;
+  }
+  .ctaBtn {
+    padding: 12px 28px;
+    font-size: 0.8rem;
+  }
+}

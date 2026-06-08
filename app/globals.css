@@ -91,6 +91,19 @@ ul, ol {
   padding: 0 24px;
 }
 
+/* ===== RESPONSIVE HELPERS ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+
 .section-title {
   font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
   font-size: 28px;

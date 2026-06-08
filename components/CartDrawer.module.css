@@ -278,4 +278,35 @@
   .drawer {
     width: 100vw;
   }
+
+  .header {
+    padding: 16px;
+  }
+
+  .items {
+    padding: 12px 16px;
+  }
+
+  .footer {
+    padding: 16px;
+  }
+
+  .item {
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .itemImage {
+    width: 70px;
+    height: 70px;
+  }
+
+  .itemName {
+    font-size: 13px;
+  }
+
+  .qtyBtn {
+    width: 26px;
+    height: 26px;
+  }
 }

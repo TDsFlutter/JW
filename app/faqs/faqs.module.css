@@ -89,3 +89,36 @@
 @media (max-width: 600px) {
   .heroTitle { font-size: 2rem; }
 }
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 60px 16px 40px;
+  }
+  .heroTitle {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+  .container {
+    padding: 30px 16px;
+  }
+  .categoryTitle {
+    font-size: 1.25rem;
+    margin-top: 30px;
+  }
+  .question {
+    padding: 14px 0;
+    font-size: 0.95rem;
+  }
+  .answer {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    padding-bottom: 14px;
+  }
+  .ctaSection {
+    padding: 40px 16px;
+  }
+  .ctaBtn {
+    width: 100%;
+    padding: 14px 20px;
+  }
+}

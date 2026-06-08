@@ -186,9 +186,16 @@
   letter-spacing: 0.5px;
 }
 
+@media (max-width: 768px) {
+  .wishlistBtn {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 600px) {
   .imageWrap {
-    height: 200px;
+    height: 180px;
+    padding: 12px;
   }
 
   .info {
@@ -201,5 +208,54 @@
 
   .price {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .imageWrap {
+    height: 150px;
+    padding: 8px;
+  }
+
+  .info {
+    padding: 8px 10px;
+  }
+
+  .name {
+    font-size: 11px;
+  }
+
+  .price {
+    font-size: 13px;
+  }
+
+  .originalPrice {
+    font-size: 10px;
+  }
+
+  .wishlistBtn {
+    width: 28px;
+    height: 28px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .badge {
+    top: 8px;
+    left: 8px;
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .discount {
+    top: 8px;
+    right: 8px;
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  /* Move discount when wishlist is present on mobile */
+  .wishlistBtn + .discount {
+    top: 40px;
   }
 }

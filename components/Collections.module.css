@@ -106,12 +106,17 @@
     height: 280px;
   }
 
+  .cardContent {
+    bottom: 20px;
+    left: 20px;
+  }
+
   .cardTitle {
     font-size: 24px;
   }
 
   .contentRight {
-    left: 30px;
+    left: 20px;
     right: auto;
     text-align: left;
   }
@@ -122,7 +127,18 @@
     height: 240px;
   }
 
+  .cardContent {
+    bottom: 16px;
+    left: 16px;
+  }
+
   .cardTitle {
     font-size: 20px;
+    margin-bottom: 12px;
+  }
+  
+  .cardBtn {
+    padding: 8px 20px;
+    font-size: 11px;
   }
 }

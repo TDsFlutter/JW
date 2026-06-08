@@ -172,3 +172,25 @@
     font-size: 11px;
   }
 }
+
+@media (max-width: 480px) {
+  .grid {
+    gap: 8px;
+  }
+
+  .imageWrap {
+    height: 150px;
+    padding: 10px;
+  }
+
+  .cardInfo {
+    padding: 8px;
+  }
+
+  .bagBtn {
+    right: 8px;
+    bottom: 8px;
+    width: 28px;
+    height: 28px;
+  }
+}

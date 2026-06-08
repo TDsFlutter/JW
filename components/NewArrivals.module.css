@@ -147,15 +147,17 @@
 
 @media (max-width: 600px) {
   .grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .imageWrap {
-    height: 240px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 
   .title {
     font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    gap: 8px;
   }
 }

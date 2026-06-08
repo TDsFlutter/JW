@@ -73,6 +73,36 @@
   .grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 480px) {
+  .hero {
+    padding: 60px 16px 40px;
+  }
+  .heroTitle {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+  .container {
+    padding: 30px 16px;
+  }
+  .detailContainer {
+    padding: 30px 16px;
+  }
+  .title {
+    font-size: 1.65rem;
+    margin-bottom: 20px;
+  }
+  .cardBody {
+    padding: 16px;
+  }
+  .content {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+  .mainImage {
+    margin-bottom: 24px;
+  }
+}
+
 .detailContainer {
   max-width: 800px;
   margin: 0 auto;

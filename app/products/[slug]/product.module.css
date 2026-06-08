@@ -353,25 +353,6 @@
   pointer-events: none;
 }
 
-.findSizeLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  font-family: var(--font-lato), 'Lato', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--crimson);
-  cursor: pointer;
-  text-decoration: underline;
-  background: none;
-  border: none;
-  letter-spacing: 0.3px;
-}
-
-.findSizeLink:hover {
-  color: var(--crimson-dark);
-}
 
 /* ===== ACTIONS ===== */
 .actionsRow {
@@ -1031,9 +1012,10 @@
 .comparisonSection {
   margin-bottom: 64px;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
+  -webkit-overflow-scrolling: touch;
 }
 
 .compTable {
@@ -1269,6 +1251,7 @@
   }
   .compTable {
     font-size: 12px;
+    min-width: 550px;
   }
   .compAttrCell,
   .compCell {
@@ -1286,9 +1269,11 @@
   }
   .trustIconsRow {
     grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
   .customerTrustGrid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
   .relatedGrid {
     grid-template-columns: repeat(2, 1fr);
