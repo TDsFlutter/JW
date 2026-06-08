@@ -87,6 +87,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .thumb:hover {
@@ -1233,6 +1234,14 @@
   .thumbnails {
     flex-direction: row;
     overflow-x: auto;
+    width: 100%;
+    padding-bottom: 6px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .thumbnails::-webkit-scrollbar {
+    display: none;
   }
   .mainImage {
     min-height: 380px;
@@ -1263,6 +1272,34 @@
 @media (max-width: 480px) {
   .productName {
     font-size: 22px;
+  }
+  .thumb {
+    width: 64px;
+    height: 64px;
+  }
+  .sizeDropdownWrap {
+    max-width: 100%;
+  }
+  .actionsRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .qtySelector {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .qtyBtn {
+    flex: 1;
+  }
+  .qtyNum {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .addToCartBtn {
+    width: 100%;
   }
   .offerGrid {
     grid-template-columns: 1fr;
