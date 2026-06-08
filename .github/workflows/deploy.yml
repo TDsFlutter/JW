@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -48,6 +49,12 @@ jobs:
           NEXT_PUBLIC_GITLAB_PROJECT_ID: "82976126"
           NEXT_PUBLIC_GITLAB_BRANCH: main
           NEXT_PUBLIC_GITLAB_UPLOAD_PATH: public/uploads
+
+      - name: Add .nojekyll
+        run: touch ./out/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
