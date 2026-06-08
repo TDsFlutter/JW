@@ -73,6 +73,8 @@ export default function AdminDashboard() {
   const [formSelectedSizes, setFormSelectedSizes] = useState([]);
   const [formSelectedMetals, setFormSelectedMetals] = useState([]);
   const [formSpecs, setFormSpecs] = useState([]);
+  const [formVideo, setFormVideo] = useState("");
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   // Content edit states
   const [heroTitle, setHeroTitle] = useState("");
@@ -489,6 +491,7 @@ export default function AdminDashboard() {
       { id: "5", label: "Carat Weight", value: "" },
       { id: "6", label: "Certification", value: "TGL Certified" }
     ]);
+    setFormVideo("");
     setError("");
     setSuccess("");
     setIsDrawerOpen(true);
@@ -545,6 +548,7 @@ export default function AdminDashboard() {
       ]);
     }
 
+    setFormVideo(product.video || "");
     setError("");
     setSuccess("");
     setIsDrawerOpen(true);
@@ -592,6 +596,7 @@ export default function AdminDashboard() {
       specs: formSpecs
         .map(s => ({ label: s.label.trim(), value: s.value.trim() }))
         .filter(s => s.label !== ""),
+      video: formVideo.trim() || null,
     };
 
     if (!isFirebaseConfigured) {
@@ -1082,6 +1087,99 @@ export default function AdminDashboard() {
       console.error("Upload error:", err);
       alert("Error uploading file: " + err.message);
       setUploadingIndices(prev => ({ ...prev, [idx]: false }));
+    }
+  };
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 20 * 1024 * 1024) {
+      alert("Video size exceeds 20MB limit.");
+      return;
+    }
+
+    setUploadingVideo(true);
+
+    try {
+      const token = process.env.NEXT_PUBLIC_GITLAB_ACCESS_TOKEN;
+      const projectId = process.env.NEXT_PUBLIC_GITLAB_PROJECT_ID;
+      const branch = process.env.NEXT_PUBLIC_GITLAB_BRANCH || "main";
+      const uploadPath = process.env.NEXT_PUBLIC_GITLAB_UPLOAD_PATH || "public/uploads";
+      const baseUrl = process.env.NEXT_PUBLIC_GITLAB_BASE_URL || "https://gitlab.com";
+
+      if (!token || token === "YOUR_PERSONAL_ACCESS_TOKEN" || !projectId || projectId === "YOUR_PROJECT_ID") {
+        alert("GitLab configuration is missing. Please check your env variables.");
+        setUploadingVideo(false);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(",")[1];
+          const uniqueFileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+          const cleanUploadPath = uploadPath.replace(/\/$/, "");
+          const fullFilePath = `${cleanUploadPath}/${uniqueFileName}`;
+          const encodedFilePath = encodeURIComponent(fullFilePath);
+
+          const apiUrl = `${baseUrl}/api/v4/projects/${projectId}/repository/files/${encodedFilePath}`;
+          const proxyApiUrl = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
+
+          const response = await fetch(proxyApiUrl, {
+            method: "POST",
+            headers: {
+              "PRIVATE-TOKEN": token,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              branch: branch,
+              author_email: "admin@ella.com",
+              author_name: "ëlla Admin",
+              content: base64Data,
+              encoding: "base64",
+              commit_message: `Upload product video: ${uniqueFileName} via Admin Control Panel`
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            alert(`Upload failed: ${errorData.message || "Unknown error"}`);
+            setUploadingVideo(false);
+            return;
+          }
+
+          const projectUrl = `${baseUrl}/api/v4/projects/${projectId}`;
+          const proxyProjectUrl = `https://corsproxy.io/?url=${encodeURIComponent(projectUrl)}`;
+          const projectResponse = await fetch(proxyProjectUrl, {
+            headers: { "PRIVATE-TOKEN": token }
+          });
+          
+          let pathWithNamespace = "";
+          if (projectResponse.ok) {
+            const projectData = await projectResponse.json();
+            pathWithNamespace = projectData.path_with_namespace;
+          }
+
+          if (!pathWithNamespace) {
+            pathWithNamespace = decodeURIComponent(projectId);
+          }
+
+          const publicUrl = `${baseUrl}/${pathWithNamespace}/-/raw/${branch}/${fullFilePath}`;
+
+          setFormVideo(publicUrl);
+          setUploadingVideo(false);
+        } catch (uploadErr) {
+          console.error("GitLab upload client error:", uploadErr);
+          alert("Error uploading: " + uploadErr.message);
+          setUploadingVideo(false);
+        }
+      };
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Error uploading file: " + err.message);
+      setUploadingVideo(false);
     }
   };
 
@@ -2129,6 +2227,53 @@ export default function AdminDashboard() {
                   >
                     + Add More Image
                   </button>
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Product Video (MP4 URL / Upload)</label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input 
+                    type="text" 
+                    className={styles.input} 
+                    value={formVideo}
+                    onChange={(e) => setFormVideo(e.target.value)}
+                    placeholder="Video URL (e.g. /uploads/video.mp4)"
+                  />
+                  
+                  <input 
+                    type="file" 
+                    id="upload-video-file" 
+                    style={{ display: "none" }} 
+                    onChange={handleVideoUpload} 
+                    accept="video/mp4,video/*" 
+                  />
+                  {uploadingVideo ? (
+                    <span style={{ fontSize: "0.75rem", color: "#888", fontStyle: "italic", whiteSpace: "nowrap" }}>
+                      Uploading...
+                    </span>
+                  ) : (
+                    <label 
+                      htmlFor="upload-video-file" 
+                      style={{
+                        backgroundColor: "#f5f5f5",
+                        border: "1px solid #eae6df",
+                        color: "#1a1a1a",
+                        padding: "8px 12px",
+                        fontSize: "0.8rem",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        whiteSpace: "nowrap",
+                        borderRadius: "2px",
+                        userSelect: "none"
+                      }}
+                    >
+                      🎥 Upload Video
+                    </label>
+                  )}
                 </div>
               </div>
 

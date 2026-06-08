@@ -103,6 +103,11 @@ function ProductDetail({ product, effectiveStock }) {
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
   const [selectedMetal, setSelectedMetal] = useState(product.metals?.[0] || "");
 
+  const galleryItems = [
+    ...(product.images || []).map((img) => ({ type: "image", src: img })),
+    ...(product.video ? [{ type: "video", src: product.video }] : [])
+  ];
+
   const [quantity, setQuantity] = useState(1);
   const [openAccordion, setOpenAccordion] = useState(null);
   const [openFaq, setOpenFaq] = useState(null);
@@ -464,20 +469,38 @@ function ProductDetail({ product, effectiveStock }) {
             transition={{ duration: 0.6 }}
           >
             <div className={styles.thumbnails}>
-              {product.images.map((img, idx) => {
-                const src = getImageSrc(img);
+              {galleryItems.map((item, idx) => {
+                if (item.type === "video") {
+                  return (
+                    <button
+                      key={idx}
+                      className={`${styles.thumb} ${selectedImage === idx ? styles.thumbActive : ""}`}
+                      onClick={() => setSelectedImage(idx)}
+                      aria-label="Play product video"
+                    >
+                      <div className={styles.videoThumbInner}>
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <span>Video</span>
+                      </div>
+                    </button>
+                  );
+                }
+                const src = getImageSrc(item.src);
                 const isExt = isExternalImage(src);
                 return (
                   <button
                     key={idx}
                     className={`${styles.thumb} ${selectedImage === idx ? styles.thumbActive : ""}`}
                     onClick={() => setSelectedImage(idx)}
+                    aria-label={`View product image ${idx + 1}`}
                   >
                     {isExt ? (
                       <img
                         src={src}
                         alt={`${product.name} view ${idx + 1}`}
-                        style={{ width: "80px", height: "80px", objectFit: "cover", display: "block" }}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                       />
                     ) : (
                       <Image
@@ -485,7 +508,7 @@ function ProductDetail({ product, effectiveStock }) {
                         alt={`${product.name} view ${idx + 1}`}
                         width={80}
                         height={80}
-                        style={{ objectFit: "contain", width: "100%", height: "auto" }}
+                        style={{ objectFit: "cover", width: "100%", height: "100%" }}
                       />
                     )}
                   </button>
@@ -496,12 +519,29 @@ function ProductDetail({ product, effectiveStock }) {
             <div
               className={styles.mainImage}
               ref={imageRef}
-              onMouseEnter={() => setZoomActive(true)}
+              onMouseEnter={() => { if (galleryItems[selectedImage]?.type !== "video") setZoomActive(true); }}
               onMouseLeave={() => setZoomActive(false)}
-              onMouseMove={handleMouseMove}
+              onMouseMove={(e) => { if (galleryItems[selectedImage]?.type !== "video") handleMouseMove(e); }}
             >
               {(() => {
-                const src = getImageSrc(product.images[selectedImage]);
+                const currentItem = galleryItems[selectedImage] || galleryItems[0];
+                if (!currentItem) return null;
+                
+                if (currentItem.type === "video") {
+                  return (
+                    <video
+                      src={currentItem.src}
+                      className={styles.heroVideo}
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  );
+                }
+
+                const src = getImageSrc(currentItem.src);
                 const isExt = isExternalImage(src);
                 return isExt ? (
                   <img
@@ -509,9 +549,6 @@ function ProductDetail({ product, effectiveStock }) {
                     alt={product.name}
                     className={styles.heroImg}
                     style={{
-                      objectFit: "contain",
-                      width: "100%",
-                      height: "auto",
                       transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                       transform: zoomActive ? "scale(1.8)" : "scale(1)",
                     }}
@@ -524,9 +561,6 @@ function ProductDetail({ product, effectiveStock }) {
                     height={600}
                     className={styles.heroImg}
                     style={{
-                      objectFit: "contain",
-                      width: "100%",
-                      height: "auto",
                       transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                       transform: zoomActive ? "scale(1.8)" : "scale(1)",
                     }}
@@ -537,12 +571,14 @@ function ProductDetail({ product, effectiveStock }) {
               {product.badge && (
                 <span className={styles.productBadge}>{product.badge}</span>
               )}
-              <div className={styles.zoomHint}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/>
-                </svg>
-                Hover to zoom
-              </div>
+              {galleryItems[selectedImage]?.type !== "video" && (
+                <div className={styles.zoomHint}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/>
+                  </svg>
+                  Hover to zoom
+                </div>
+              )}
             </div>
           </motion.div>
 
