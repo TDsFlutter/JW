@@ -710,29 +710,6 @@ function ProductDetail({ product, effectiveStock }) {
               ))}
             </div>
 
-            {/* Trust Icons */}
-            <div className={styles.trustIconsRow}>
-              {trustIcons.map((item, idx) => (
-                <div key={idx} className={styles.trustIcon}>
-                  <div className={styles.trustIconImg}>{item.icon}</div>
-                  <span className={styles.trustIconLabel}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Wishlist Toggle */}
-            <div className={styles.wishlistRow}>
-              <button
-                className={`${styles.wishBtn} ${isInWishlist(product.id) ? styles.wishActive : ""}`}
-                onClick={() => toggleWishlist(product.id)}
-                aria-label="Toggle wishlist"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill={isInWishlist(product.id) ? "var(--crimson)" : "none"} stroke={isInWishlist(product.id) ? "var(--crimson)" : "#666"} strokeWidth="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-                {isInWishlist(product.id) ? "Saved to Wishlist" : "Add to Wishlist"}
-              </button>
-            </div>
           </motion.div>
         </div>
 
