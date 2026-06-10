@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import styles from "./Footer.module.css";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -25,20 +24,14 @@ export default function Footer() {
   });
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      const cached = localStorage.getItem("mock_contacts");
-      if (cached) setContacts(JSON.parse(cached));
-      return;
-    }
-    const unsub = onSnapshot(doc(db, "settings", "contacts"), (docSnap) => {
-      if (docSnap.exists()) {
-        setContacts(docSnap.data());
-      } else {
-        const cached = localStorage.getItem("mock_contacts");
-        if (cached) setContacts(JSON.parse(cached));
+    const cached = localStorage.getItem("mock_contacts");
+    if (cached) {
+      try {
+        setContacts(JSON.parse(cached));
+      } catch (e) {
+        console.error(e);
       }
-    });
-    return () => unsub();
+    }
   }, []);
 
   return (

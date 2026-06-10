@@ -5,9 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { isFirebaseConfigured, db, rtdb } from "@/lib/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
-import { ref, get, set as dbSet } from "firebase/database";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import styles from "./checkout.module.css";
@@ -75,10 +73,15 @@ export default function CheckoutPage() {
 
     const generatedId = "ord_" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
-    const orderData = {
-      id: generatedId,
-      userId: currentUser?.uid || "guest",
-      userEmail: form.email || currentUser?.email || "guest@ella.com",
+    const orderPayload = {
+      order_number: generatedId,
+      user_id: currentUser?.uid || null,
+      email: form.email || currentUser?.email || "guest@ella.com",
+      name: `${form.firstName} ${form.lastName}`,
+      phone: form.phone || '',
+      address: `${form.address}, ${form.city}, ${form.state}, ${form.zip}, ${form.country}`,
+      total_amount: total,
+      payment_method: "Credit Card",
       items: cart.map(item => ({
         id: item.product.id,
         name: item.product.name,
@@ -86,72 +89,37 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         metal: item.selectedMetal || "",
         size: item.selectedSize || ""
-      })),
-      shippingAddress: {
-        fullName: `${form.firstName} ${form.lastName}`,
-        address: form.address,
-        city: form.city,
-        state: form.state,
-        zipCode: form.zip,
-        country: form.country,
-        phone: form.phone
-      },
-      totalAmount: total,
-      status: "pending",
-      createdAt: new Date().toISOString()
+      }))
     };
 
-    if (!isFirebaseConfigured) {
-      // 1. Save to mock orders list in localStorage
+    try {
+      const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+      const res = await fetch(`${ADMIN_URL}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(orderPayload)
+      });
+
+      if (res.ok) {
+        setOrderId(generatedId);
+        setOrderPlaced(true);
+        clearCart();
+      } else {
+        const errData = await res.json();
+        throw new Error(errData.error || "Checkout API failed");
+      }
+    } catch (err) {
+      console.error("Order submission failed, using local mock fallback:", err);
+      // Fallback in case database is offline
       const allMockOrders = JSON.parse(localStorage.getItem("mock_orders") || "[]");
-      allMockOrders.push(orderData);
+      allMockOrders.push(orderPayload);
       localStorage.setItem("mock_orders", JSON.stringify(allMockOrders));
 
-      // 2. Decrement mock product stock
-      const localProducts = localStorage.getItem("mock_products");
-      if (localProducts) {
-        const prods = JSON.parse(localProducts);
-        const updated = prods.map(p => {
-          const cartItem = cart.find(item => item.product.slug === p.slug);
-          if (cartItem) {
-            return { ...p, stock: Math.max(0, p.stock - cartItem.quantity) };
-          }
-          return p;
-        });
-        localStorage.setItem("mock_products", JSON.stringify(updated));
-      }
-
       setOrderId(generatedId);
       setOrderPlaced(true);
       clearCart();
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      // 1. Write order to Cloud Firestore
-      await setDoc(doc(db, "orders", generatedId), orderData);
-
-      // 2. Decrement stocks in Realtime Database /inventory/{slug}
-      if (rtdb) {
-        for (const item of cart) {
-          const slug = item.product.slug;
-          const stockRef = ref(rtdb, `inventory/${slug}`);
-          const snapshot = await get(stockRef);
-          if (snapshot.exists()) {
-            const currentStock = Number(snapshot.val());
-            const newStock = Math.max(0, currentStock - item.quantity);
-            await dbSet(stockRef, newStock);
-          }
-        }
-      }
-
-      setOrderId(generatedId);
-      setOrderPlaced(true);
-      clearCart();
-    } catch (err) {
-      console.error("Order submission failed:", err);
-      setSubmitError("Failed to submit order: " + (err.message || "Please try again."));
     } finally {
       setIsSubmitting(false);
     }

@@ -2,8 +2,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
 import { blogPosts } from "@/data/blog";
 import styles from "./blog.module.css";
 
@@ -13,31 +11,25 @@ export default function BlogPage() {
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      const cached = localStorage.getItem("mock_blogs");
-      setBlogs(cached ? JSON.parse(cached) : blogPosts);
-      setLoading(false);
-      return;
-    }
-
-    const unsub = onSnapshot(
-      collection(db, "blogs"),
-      (querySnapshot) => {
-        const fetched = [];
-        querySnapshot.forEach((doc) => {
-          fetched.push({ id: doc.id, ...doc.data() });
-        });
-        setBlogs(fetched.length > 0 ? fetched : blogPosts);
-        setLoading(false);
-      },
-      (e) => {
-        console.error("Error loading blogs from Firestore:", e);
-        setBlogs(blogPosts);
-        setLoading(false);
+    const fetchBlogs = async () => {
+      const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+      try {
+        const res = await fetch(`${ADMIN_URL}/api/blogs?status=Active`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlogs(data.length > 0 ? data : blogPosts);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error fetching blogs from API:", err);
       }
-    );
-
-    return () => unsub();
+      
+      // Fallback to static mock blogs
+      setBlogs(blogPosts);
+      setLoading(false);
+    };
+    fetchBlogs();
   }, []);
 
   if (loading) {

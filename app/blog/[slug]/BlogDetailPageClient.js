@@ -2,8 +2,6 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
 import { blogPosts } from "@/data/blog";
 import styles from "../blog.module.css";
 
@@ -16,40 +14,26 @@ export default function BlogDetailPageClient({ params }) {
 
   useEffect(() => {
     if (!slug) return;
+    setLoading(true);
 
-    if (!isFirebaseConfigured) {
-      const cached = localStorage.getItem("mock_blogs");
-      const list = cached ? JSON.parse(cached) : blogPosts;
-      const found = list.find((p) => p.slug === slug);
-      setPost(found);
-      setLoading(false);
-      return;
-    }
-
-    const unsub = onSnapshot(
-      doc(db, "blogs", slug),
-      (docSnap) => {
-        if (docSnap.exists()) {
-          setPost(docSnap.data());
-        } else {
-          const cached = localStorage.getItem("mock_blogs");
-          const list = cached ? JSON.parse(cached) : blogPosts;
-          const found = list.find((p) => p.slug === slug);
-          setPost(found);
-        }
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+    fetch(`${ADMIN_URL}/api/blogs/${slug}`)
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("Not found");
+      })
+      .then(data => {
+        setPost(data);
         setLoading(false);
-      },
-      (e) => {
-        console.error("Error loading blog details from Firestore:", e);
+      })
+      .catch(err => {
+        console.error("Error loading blog detail from API, falling back to mock:", err);
         const cached = localStorage.getItem("mock_blogs");
         const list = cached ? JSON.parse(cached) : blogPosts;
         const found = list.find((p) => p.slug === slug);
         setPost(found);
         setLoading(false);
-      }
-    );
-
-    return () => unsub();
+      });
   }, [slug]);
 
   if (loading) {

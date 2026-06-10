@@ -8,14 +8,16 @@ import styles from "./ProductCard.module.css";
 
 export default function ProductCard({ product, index = 0 }) {
   const { toggleWishlist, isInWishlist, addToCart } = useCart();
-  const discount = Math.round(
-    ((product.originalPrice - product.price) / product.originalPrice) * 100
-  );
+  const priceVal = parseFloat(product.price || 0);
+  const origPriceVal = parseFloat(product.originalPrice || 0);
+  const discount = origPriceVal > priceVal ? Math.round(
+    ((origPriceVal - priceVal) / origPriceVal) * 100
+  ) : 0;
 
   const handleQuickAdd = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product, product.sizes[0], product.metals[0], 1);
+    addToCart(product, product.sizes?.[0] || "12", product.metals?.[0] || "Sterling Silver", 1);
   };
 
   const handleWishlist = (e) => {
@@ -86,10 +88,10 @@ export default function ProductCard({ product, index = 0 }) {
 
         <div className={styles.info}>
           <div className={styles.priceRow}>
-            <span className={styles.price}>₹{product.price.toFixed(2)}</span>
-            {product.originalPrice > product.price && (
+            <span className={styles.price}>₹{priceVal.toFixed(2)}</span>
+            {origPriceVal > priceVal && (
               <span className={styles.originalPrice}>
-                ₹{product.originalPrice.toFixed(2)}
+                ₹{origPriceVal.toFixed(2)}
               </span>
             )}
           </div>

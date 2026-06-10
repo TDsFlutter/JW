@@ -49,6 +49,7 @@ jobs:
           NEXT_PUBLIC_GITLAB_PROJECT_ID: "82976126"
           NEXT_PUBLIC_GITLAB_BRANCH: main
           NEXT_PUBLIC_GITLAB_UPLOAD_PATH: public/uploads
+          NEXT_PUBLIC_ADMIN_URL: https://admin.ella-jewelry.com
 
       - name: Add .nojekyll
         run: touch ./out/.nojekyll

@@ -6,8 +6,7 @@ import { products as mockProducts, categories as mockCategories } from "@/data/p
 import ProductCard from "@/components/ProductCard";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/context/CartContext";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import styles from "./shop.module.css";
 
 const PRODUCTS_PER_PAGE = 12;
@@ -32,7 +31,7 @@ function ShopContent() {
   const [categoryList, setCategoryList] = useState(["All"]);
   const [loading, setLoading] = useState(true);
 
-  // ── Load products (with localStorage cache) ───────────────────────────────
+  // ── Load products (with API backend check) ───────────────────────────────
   const loadProducts = useCallback(async () => {
     // 1. Try cache first
     try {
@@ -50,48 +49,43 @@ function ShopContent() {
       // Ignore corrupt cache
     }
 
-    // 2. No Firebase? Use mock data immediately
-    if (!isFirebaseConfigured) {
-      setProductList(mockProducts);
-      setCategoryList(mockCategories);
-      setLoading(false);
-      return;
-    }
-
-    // 3. Fetch from Firestore (one-shot, no persistent listener)
+    // 2. Fetch from Backend MySQL APIs
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
     try {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      const fetched = [];
-      const cats = new Set(["All"]);
+      const prodRes = await fetch(`${ADMIN_URL}/api/products?status=Active`);
+      const catsRes = await fetch(`${ADMIN_URL}/api/categories`);
+      
+      if (prodRes.ok && catsRes.ok) {
+        const prodsData = await prodRes.json();
+        const catsData = await catsRes.json();
+        
+        const finalProducts = prodsData.length > 0 ? prodsData : mockProducts;
+        
+        const catNames = new Set(["All"]);
+        catsData.forEach(c => catNames.add(c.name));
+        const finalCats = Array.from(catNames);
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        fetched.push({ id: doc.id, ...data });
-        if (data.category) cats.add(data.category);
-      });
+        setProductList(finalProducts);
+        setCategoryList(finalCats);
 
-      const finalProducts = fetched.length > 0 ? fetched : mockProducts;
-      const finalCats = fetched.length > 0 ? Array.from(cats) : mockCategories;
-
-      setProductList(finalProducts);
-      setCategoryList(finalCats);
-
-      // Save to cache
-      try {
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ data: finalProducts, cats: finalCats, ts: Date.now() })
-        );
-      } catch (_) {
-        // Storage quota exceeded – ignore
+        // Save to cache
+        try {
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ data: finalProducts, cats: finalCats, ts: Date.now() })
+          );
+        } catch (_) {}
+        setLoading(false);
+        return;
       }
     } catch (err) {
-      console.error("Error loading products:", err);
-      setProductList(mockProducts);
-      setCategoryList(mockCategories);
-    } finally {
-      setLoading(false);
+      console.error("Backend fetch error, falling back to mocks:", err);
     }
+
+    // 3. Fallback to mock data if API fails or Firebase local mock is running
+    setProductList(mockProducts);
+    setCategoryList(mockCategories);
+    setLoading(false);
   }, []);
 
   useEffect(() => {

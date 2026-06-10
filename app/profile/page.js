@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { logout, isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { logout, isFirebaseConfigured } from "@/lib/firebase";
 import { products } from "@/data/products";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import Link from "next/link";
@@ -41,35 +40,25 @@ export default function ProfilePage() {
 
     const fetchOrders = async () => {
       setOrdersLoading(true);
-      if (!isFirebaseConfigured) {
-        // Fetch mock orders from localStorage
-        const allMockOrders = JSON.parse(localStorage.getItem("mock_orders") || "[]");
-        const userMockOrders = allMockOrders.filter(o => o.userId === currentUser.uid);
-        // Sort descending by date
-        userMockOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setOrders(userMockOrders);
-        setOrdersLoading(false);
-        return;
+
+      const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+      try {
+        const res = await fetch(`${ADMIN_URL}/api/orders?user_id=${currentUser.uid}`);
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
+          setOrdersLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error loading orders from API, trying mock fallback:", err);
       }
 
-      try {
-        const ordersRef = collection(db, "orders");
-        const q = query(
-          ordersRef, 
-          where("userId", "==", currentUser.uid),
-          orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
-        const fetched = [];
-        querySnapshot.forEach((doc) => {
-          fetched.push({ id: doc.id, ...doc.data() });
-        });
-        setOrders(fetched);
-      } catch (err) {
-        console.error("Error loading orders:", err);
-      } finally {
-        setOrdersLoading(false);
-      }
+      // Local storage mock fallback
+      const allMockOrders = JSON.parse(localStorage.getItem("mock_orders") || "[]");
+      const userMockOrders = allMockOrders.filter(o => o.user_id === currentUser.uid || o.userId === currentUser.uid);
+      setOrders(userMockOrders);
+      setOrdersLoading(false);
     };
 
     fetchOrders();
@@ -204,8 +193,8 @@ export default function ProfilePage() {
               Account Settings
             </button>
             {userProfile?.role === "admin" && (
-              <Link 
-                href="/admin" 
+              <a 
+                href={process.env.NEXT_PUBLIC_ADMIN_URL || "/admin"} 
                 className={styles.menuBtn}
                 style={{ 
                   color: "#b59410", 
@@ -215,7 +204,7 @@ export default function ProfilePage() {
                 }}
               >
                 Admin Panel ➔
-              </Link>
+              </a>
             )}
           </nav>
 

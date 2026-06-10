@@ -96,7 +96,7 @@ export default function CartDrawer() {
                       </p>
                       <div className={styles.itemPriceRow}>
                         <span className={styles.itemPrice}>
-                          ₹{(item.product.price * item.quantity).toFixed(2)}
+                          ₹{(parseFloat(item.product.price || 0) * item.quantity).toFixed(2)}
                         </span>
                       </div>
                       <div className={styles.qtyRow}>

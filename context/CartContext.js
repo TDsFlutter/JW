@@ -1,8 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { isFirebaseConfigured, db, rtdb } from "@/lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
-import { ref, set as dbSet } from "firebase/database";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
@@ -32,7 +30,7 @@ export function CartProvider({ children }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // 2. Load cart & wishlist from userProfile on login
+  // 2. Load cart & wishlist on login
   useEffect(() => {
     if (!loaded) return;
     
@@ -43,8 +41,17 @@ export function CartProvider({ children }) {
           if (Array.isArray(userProfile.cart)) {
             setCart(userProfile.cart);
           }
-          if (Array.isArray(userProfile.wishlist)) {
-            setWishlist(userProfile.wishlist);
+          if (userProfile.wishlist) {
+            try {
+              const parsedWishlist = typeof userProfile.wishlist === 'string'
+                ? JSON.parse(userProfile.wishlist)
+                : userProfile.wishlist;
+              if (Array.isArray(parsedWishlist)) {
+                setWishlist(parsedWishlist);
+              }
+            } catch (e) {
+              console.error("Error parsing wishlist:", e);
+            }
           }
         }
       }
@@ -66,7 +73,7 @@ export function CartProvider({ children }) {
     }
   }, [currentUser, userProfile, loaded, lastUid]);
 
-  // 3. Save to localStorage, Firestore & RTDB on change
+  // 3. Save to localStorage & MySQL on change
   useEffect(() => {
     if (!loaded) return;
 
@@ -95,34 +102,24 @@ export function CartProvider({ children }) {
         }
 
         try {
-          // Firestore sync
-          const docRef = doc(db, "users", currentUser.uid);
-          await updateDoc(docRef, { cart, wishlist });
-
-          // Realtime DB sync (active cart)
-          if (rtdb) {
-            const cartRef = ref(rtdb, `active_carts/${currentUser.uid}`);
-            if (cart.length === 0) {
-              await dbSet(cartRef, null); // remove
-            } else {
-              await dbSet(cartRef, {
-                email: currentUser.email,
-                displayName: userProfile?.displayName || currentUser.displayName || "Customer",
-                itemsCount: cart.reduce((sum, item) => sum + item.quantity, 0),
-                total: cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
-                items: cart.map(i => ({
-                  id: i.product.id,
-                  name: i.product.name,
-                  quantity: i.quantity,
-                  metal: i.selectedMetal || "",
-                  size: i.selectedSize || ""
-                })),
-                updatedAt: new Date().toISOString()
-              });
-            }
-          }
+          // Sync wishlist via profile API
+          const token = await currentUser.getIdToken();
+          const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+          await fetch(`${ADMIN_URL}/api/users/profile`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              uid: currentUser.uid,
+              email: currentUser.email,
+              displayName: userProfile?.displayName || currentUser.displayName || "",
+              wishlist: wishlist
+            })
+          });
         } catch (e) {
-          console.error("Database sync failed:", e);
+          console.error("MySQL Profile sync failed:", e);
         }
       };
 
@@ -198,7 +195,7 @@ export function CartProvider({ children }) {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = cart.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + parseFloat(item.product.price || 0) * item.quantity,
     0
   );
 

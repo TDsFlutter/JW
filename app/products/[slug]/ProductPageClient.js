@@ -8,9 +8,6 @@ import { getProductBySlug, getRelatedProducts } from "@/data/products";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { isFirebaseConfigured, db, rtdb } from "@/lib/firebase";
-import { doc, onSnapshot, collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
-import { ref, onValue } from "firebase/database";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProductCard from "@/components/ProductCard";
 import styles from "./product.module.css";
@@ -20,55 +17,28 @@ export default function ProductPageClient({ params }) {
   const slug = resolvedParams.slug;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [liveStock, setLiveStock] = useState(null);
 
-  // Fetch product from Firestore or fallback to mock data in real-time
+  // Fetch product from Backend API or fallback to mock data
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
 
-    if (!isFirebaseConfigured) {
-      const mockProduct = getProductBySlug(slug);
-      setProduct(mockProduct);
-      setLoading(false);
-      return;
-    }
-
-    const productRef = doc(db, "products", slug);
-    const unsub = onSnapshot(
-      productRef,
-      (productSnap) => {
-        if (productSnap.exists()) {
-          setProduct({ ...productSnap.data(), slug });
-        } else {
-          const mockProduct = getProductBySlug(slug);
-          setProduct(mockProduct);
-        }
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+    fetch(`${ADMIN_URL}/api/products/${slug}`)
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("Not found");
+      })
+      .then(data => {
+        setProduct(data);
         setLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching product:", err);
+      })
+      .catch(err => {
+        console.error("Error fetching product from API, falling back to mock:", err);
         const mockProduct = getProductBySlug(slug);
         setProduct(mockProduct);
         setLoading(false);
-      }
-    );
-
-    return () => unsub();
-  }, [slug]);
-
-  // Subscribe to live stock from Realtime Database
-  useEffect(() => {
-    if (!rtdb || !slug) return;
-
-    const stockRef = ref(rtdb, `inventory/${slug}`);
-    const unsubscribe = onValue(stockRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setLiveStock(Number(snapshot.val()));
-      }
-    });
-
-    return () => unsubscribe();
+      });
   }, [slug]);
 
   if (loading) {
@@ -91,17 +61,18 @@ export default function ProductPageClient({ params }) {
     );
   }
 
-  const effectiveStock = liveStock !== null ? liveStock : (product.stock || 0);
-
-  return <ProductDetail product={product} effectiveStock={effectiveStock} />;
+  return <ProductDetail product={product} />;
 }
 
-function ProductDetail({ product, effectiveStock }) {
+function ProductDetail({ product }) {
   const { addToCart, toggleWishlist, isInWishlist } = useCart();
   const { currentUser, userProfile } = useAuth();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
-  const [selectedMetal, setSelectedMetal] = useState(product.metals?.[0] || "");
+  const productMetals = product.metals || ["Sterling Silver", "18K Gold Plate", "Rose Gold"];
+  const productSizes = product.sizes || (product.category === "Rings" ? ["6", "7", "8", "9", "10", "11", "12", "13", "14"] : ["Standard"]);
+
+  const [selectedSize, setSelectedSize] = useState(productSizes[0] || "");
+  const [selectedMetal, setSelectedMetal] = useState(productMetals[0] || "");
 
   const galleryItems = [
     ...(product.images || []).map((img) => ({ type: "image", src: img })),
@@ -244,20 +215,16 @@ function ProductDetail({ product, effectiveStock }) {
 
   useEffect(() => {
     const fetchRelated = async () => {
-      if (!isFirebaseConfigured) {
-        setRelatedProducts(getRelatedProducts(product, 4));
-        return;
-      }
+      const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const fetched = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.category === product.category && doc.id !== product.slug) {
-            fetched.push({ id: doc.id, ...data });
-          }
-        });
-        setRelatedProducts(fetched.length > 0 ? fetched.slice(0, 4) : getRelatedProducts(product, 4));
+        const res = await fetch(`${ADMIN_URL}/api/products?category=${encodeURIComponent(product.category)}`);
+        if (res.ok) {
+          const prods = await res.json();
+          const filtered = prods.filter(p => p.slug !== product.slug);
+          setRelatedProducts(filtered.length > 0 ? filtered.slice(0, 4) : getRelatedProducts(product, 4));
+        } else {
+          setRelatedProducts(getRelatedProducts(product, 4));
+        }
       } catch (err) {
         console.error("Error fetching related products:", err);
         setRelatedProducts(getRelatedProducts(product, 4));
@@ -266,8 +233,11 @@ function ProductDetail({ product, effectiveStock }) {
     fetchRelated();
   }, [product]);
 
-  const discount = product.originalPrice > product.price ? Math.round(
-    ((product.originalPrice - product.price) / product.originalPrice) * 100
+  const priceVal = parseFloat(product.price || 0);
+  const origPriceVal = parseFloat(product.originalPrice || 0);
+
+  const discount = origPriceVal > priceVal ? Math.round(
+    ((origPriceVal - priceVal) / origPriceVal) * 100
   ) : 0;
 
   const breadcrumbs = [
@@ -605,10 +575,10 @@ function ProductDetail({ product, effectiveStock }) {
 
             {/* Price Block */}
             <div className={styles.priceBlock}>
-              <span className={styles.currentPrice}>₹{product.price.toFixed(2)}</span>
-              {product.originalPrice > product.price && (
+              <span className={styles.currentPrice}>₹{priceVal.toFixed(2)}</span>
+              {origPriceVal > priceVal && (
                 <>
-                  <span className={styles.origPrice}>₹{product.originalPrice.toFixed(2)}</span>
+                  <span className={styles.origPrice}>₹{origPriceVal.toFixed(2)}</span>
                   <span className={styles.saveBadge}>Save {discount}%</span>
                 </>
               )}
@@ -616,18 +586,7 @@ function ProductDetail({ product, effectiveStock }) {
 
             {/* Stock Info */}
             <div className={styles.stockInfo}>
-              {effectiveStock === 0 ? (
-                <span className={styles.lowStock}>❌ Currently Out of Stock</span>
-              ) : effectiveStock <= 5 ? (
-                <span className={styles.lowStock}>🔥 Only {effectiveStock} left in stock!</span>
-              ) : (
-                <span className={styles.inStock}>✓ In Stock — Ready to Ship</span>
-              )}
-              {rtdb && (
-                <span style={{ fontSize: "10px", color: "#aaa", marginLeft: "10px" }}>
-                  ● Live
-                </span>
-              )}
+              <span className={styles.inStock}>✓ Made To Order — Handcrafted For You</span>
             </div>
 
             {/* Metal / Plating Selection */}
@@ -639,7 +598,7 @@ function ProductDetail({ product, effectiveStock }) {
                 Plating: <strong>{metalSwatches.find(s => s.name === selectedMetal)?.label || selectedMetal}</strong>
               </label>
               <div className={styles.swatchRow}>
-                {product.metals.map((metal) => {
+                {productMetals.map((metal) => {
                   const swatch = metalSwatches.find(s => s.name === metal);
                   return (
                     <button
@@ -668,7 +627,7 @@ function ProductDetail({ product, effectiveStock }) {
                   value={selectedSize}
                   onChange={(e) => setSelectedSize(e.target.value)}
                 >
-                  {product.sizes.map((size) => (
+                  {productSizes.map((size) => (
                     <option key={size} value={size}>
                       {isNaN(size) ? size : `${size} (${(44.2 + (parseInt(size) - 4) * 3.14).toFixed(2)} mm)`}
                     </option>

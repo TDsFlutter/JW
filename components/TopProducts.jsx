@@ -3,8 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import styles from "./TopProducts.module.css";
 
@@ -117,21 +116,18 @@ export default function TopProducts() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return;
-    const unsub = onSnapshot(
-      collection(db, "products"),
-      (querySnapshot) => {
-        const fetched = [];
-        querySnapshot.forEach((doc) => {
-          fetched.push({ id: doc.id, ...doc.data() });
-        });
-        setProductList(fetched);
-      },
-      (e) => {
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+    fetch(`${ADMIN_URL}/api/products?status=Active`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("API failed");
+      })
+      .then((data) => {
+        setProductList(data);
+      })
+      .catch((e) => {
         console.error("Error loading products for TopProducts:", e);
-      }
-    );
-    return () => unsub();
+      });
   }, []);
 
   const activeCategoryName = categories[activeCategory];

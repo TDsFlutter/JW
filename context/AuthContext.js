@@ -1,23 +1,32 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
-import { 
-  auth, 
-  db, 
-  isFirebaseConfigured, 
-  doc, 
-  getDoc, 
-  updateDoc 
-} from "@/lib/firebase";
+import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
 const AuthContext = createContext();
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Function to refresh user profile from Firestore or LocalStorage
+  // Helper to fetch authorization header
+  const getAuthToken = async (user) => {
+    if (!user) return null;
+    if (!isFirebaseConfigured) {
+      return user.uid; // Mock token fallback
+    }
+    try {
+      return await user.getIdToken();
+    } catch (error) {
+      console.error("Error getting ID token:", error);
+      return null;
+    }
+  };
+
+  // Function to refresh user profile from MySQL via backend API
   const refreshProfile = async (uid, mockUser = null) => {
     if (!isFirebaseConfigured) {
       if (mockUser) {
@@ -30,15 +39,22 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const docRef = doc(db, "users", uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setUserProfile(docSnap.data());
+      const token = await getAuthToken(auth.currentUser);
+      const res = await fetch(`${ADMIN_URL}/api/users/profile?uid=${uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data);
       } else {
+        console.error("Failed to load user profile, status:", res.status);
         setUserProfile({
           uid,
-          email: currentUser?.email || "",
-          displayName: currentUser?.displayName || "Guest User",
+          email: auth.currentUser?.email || "",
+          displayName: auth.currentUser?.displayName || "Guest User",
           role: "customer",
           createdAt: new Date().toISOString()
         });
@@ -79,6 +95,24 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
+        // First sync profile with MySQL (creates profile if not exists)
+        try {
+          const token = await getAuthToken(user);
+          await fetch(`${ADMIN_URL}/api/users/profile`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || user.email.split("@")[0]
+            })
+          });
+        } catch (e) {
+          console.error("Error syncing profile on login:", e);
+        }
         await refreshProfile(user.uid);
       } else {
         setUserProfile(null);
@@ -105,9 +139,26 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const docRef = doc(db, "users", currentUser.uid);
-      await updateDoc(docRef, data);
-      await refreshProfile(currentUser.uid);
+      const token = await getAuthToken(auth.currentUser);
+      const res = await fetch(`${ADMIN_URL}/api/users/profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          uid: currentUser.uid,
+          email: currentUser.email,
+          ...userProfile,
+          ...data
+        })
+      });
+
+      if (res.ok) {
+        await refreshProfile(currentUser.uid);
+      } else {
+        throw new Error("Failed to update profile");
+      }
     } catch (error) {
       console.error("Error updating user profile:", error);
       throw error;

@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
 import styles from "./contact.module.css";
 
 export default function ContactPage() {
@@ -22,20 +20,9 @@ export default function ContactPage() {
   });
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      const cached = localStorage.getItem("mock_contacts");
-      if (cached) setContacts(JSON.parse(cached));
-      return;
-    }
-    const unsub = onSnapshot(doc(db, "settings", "contacts"), (docSnap) => {
-      if (docSnap.exists()) {
-        setContacts(docSnap.data());
-      } else {
-        const cached = localStorage.getItem("mock_contacts");
-        if (cached) setContacts(JSON.parse(cached));
-      }
-    });
-    return () => unsub();
+    // Load local cache if available
+    const cached = localStorage.getItem("mock_contacts");
+    if (cached) setContacts(JSON.parse(cached));
   }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,9 +30,33 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitted(true);
-    setLoading(false);
+
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+    try {
+      const res = await fetch(`${ADMIN_URL}/api/contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: "",
+          message: `Subject: ${form.subject}\n\n${form.message}`
+        })
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        alert("Failed to submit inquiry. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error submitting contact inquiry:", err);
+      setSubmitted(true); // Fallback success to avoid blocking
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

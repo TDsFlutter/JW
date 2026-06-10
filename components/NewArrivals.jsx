@@ -3,8 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { products } from "@/data/products";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import ProductCard from "@/components/ProductCard";
 import styles from "./NewArrivals.module.css";
 
@@ -14,26 +13,19 @@ export default function NewArrivals() {
   const [productList, setProductList] = useState([]);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      setProductList(products);
-      return;
-    }
-    const unsub = onSnapshot(
-      collection(db, "products"),
-      (querySnapshot) => {
-        const fetched = [];
-        querySnapshot.forEach((doc) => {
-          fetched.push({ id: doc.id, ...doc.data() });
-        });
-        setProductList(fetched.length > 0 ? fetched : products);
-      },
-      (e) => {
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+    fetch(`${ADMIN_URL}/api/products?status=Active`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("API failed");
+      })
+      .then((data) => {
+        setProductList(data.length > 0 ? data : products);
+      })
+      .catch((e) => {
         console.error("Error loading products for New Arrivals:", e);
         setProductList(products);
-      }
-    );
-
-    return () => unsub();
+      });
   }, []);
 
   // Show the last 3 added items as New Arrivals (or first 3 if total is less than 3)

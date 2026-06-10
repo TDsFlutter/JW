@@ -1,0 +1,236 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  padding: 40px 20px;
+  font-family: var(--font-lato), sans-serif;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border: 1px solid #eae6df;
+  border-radius: 4px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.adminBadge {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #b59410;
+  background-color: #faf9f6;
+  border: 1px solid #eae6df;
+  padding: 6px 16px;
+  display: inline-block;
+  margin: 0 auto 20px;
+  width: 100%;
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-baskerville), serif;
+  font-size: 2rem;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #707070;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333333;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #eae6df;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  background-color: #faf9f6;
+  color: #1a1a1a;
+  transition: border-color 0.3s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #b59410;
+}
+
+.forgotBtn {
+  background: none;
+  border: none;
+  color: #707070;
+  font-size: 0.85rem;
+  cursor: pointer;
+  align-self: flex-end;
+  padding: 0;
+  margin-top: -8px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.forgotBtn:hover {
+  color: #b59410;
+}
+
+.submitBtn {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: none;
+  padding: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.submitBtn:hover {
+  background-color: #b59410;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.8rem;
+  margin: 24px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #eae6df;
+}
+
+.divider:not(:empty)::before {
+  margin-right: 15px;
+}
+
+.divider:not(:empty)::after {
+  margin-left: 15px;
+}
+
+.socialGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.socialBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #eae6df;
+  padding: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.socialBtn:hover {
+  border-color: #1a1a1a;
+  background-color: #faf9f6;
+}
+
+.socialIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.error {
+  background-color: #fdf3f2;
+  border: 1px solid #f2cfcb;
+  color: #c0392b;
+  padding: 12px;
+  font-size: 0.85rem;
+  border-radius: 2px;
+  margin-bottom: 15px;
+}
+
+.success {
+  background-color: #f3faf1;
+  border: 1px solid #d4ecd0;
+  color: #27ae60;
+  padding: 12px;
+  font-size: 0.85rem;
+  border-radius: 2px;
+  margin-bottom: 15px;
+}
+
+.fallbackNotice {
+  background-color: #fffde6;
+  border: 1px solid #ffe89e;
+  color: #9c7300;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  margin-bottom: 20px;
+  border-radius: 2px;
+  text-align: center;
+}
+
+.backToSite {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eae6df;
+}
+
+.backToSite a {
+  font-size: 0.85rem;
+  color: #707070;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.backToSite a:hover {
+  color: #b59410;
+}
+
+@media (max-width: 480px) {
+  .authCard {
+    padding: 24px 16px;
+  }
+}

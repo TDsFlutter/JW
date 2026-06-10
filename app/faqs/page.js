@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { isFirebaseConfigured, db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
 import Link from "next/link";
 import styles from "./faqs.module.css";
 
@@ -36,48 +34,33 @@ export default function FaqsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      const cached = localStorage.getItem("mock_faqs");
-      if (cached) {
-        setFaqsList(JSON.parse(cached));
-      } else {
-        const flattened = [];
-        Object.entries(defaultFaqsData).forEach(([category, items]) => {
-          items.forEach((item, idx) => {
-            flattened.push({ id: `${category}-${idx}`, category, q: item.q, a: item.a });
-          });
-        });
-        setFaqsList(flattened);
-        localStorage.setItem("mock_faqs", JSON.stringify(flattened));
+    const fetchFaqs = async () => {
+      const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+      try {
+        const res = await fetch(`${ADMIN_URL}/api/faqs`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.length > 0) {
+            setFaqsList(data);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching FAQs from API:", err);
       }
-      setLoading(false);
-      return;
-    }
-
-    const unsub = onSnapshot(collection(db, "faq"), (querySnapshot) => {
-      const fetched = [];
-      querySnapshot.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() });
-      });
       
-      if (fetched.length === 0) {
-        const flattened = [];
-        Object.entries(defaultFaqsData).forEach(([category, items]) => {
-          items.forEach((item, idx) => {
-            flattened.push({ id: `${category}-${idx}`, category, q: item.q, a: item.a });
-          });
+      // Fallback
+      const flattened = [];
+      Object.entries(defaultFaqsData).forEach(([category, items]) => {
+        items.forEach((item, idx) => {
+          flattened.push({ id: `${category}-${idx}`, category, q: item.q, a: item.a });
         });
-        setFaqsList(flattened);
-      } else {
-        setFaqsList(fetched);
-      }
+      });
+      setFaqsList(flattened);
       setLoading(false);
-    }, (e) => {
-      console.error("Error loading FAQs:", e);
-      setLoading(false);
-    });
-
-    return () => unsub();
+    };
+    fetchFaqs();
   }, []);
 
   const toggle = (key) => setOpenIndex(openIndex === key ? null : key);
