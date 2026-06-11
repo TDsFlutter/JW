@@ -10,7 +10,6 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import StatCard from "@/components/ui/StatCard";
 import Badge from "@/components/ui/Badge";
-import ChartPlaceholder from "@/components/ui/ChartPlaceholder";
 import Modal from "@/components/ui/Modal";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { ToastBridge } from "@/components/ui/Toast";
@@ -45,6 +44,7 @@ export default function AdminDashboard() {
   const [faqs, setFaqs] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Status/Error States
@@ -169,9 +169,9 @@ export default function AdminDashboard() {
   // result so switching tabs (or opening drawers) never re-fetches. Mutations
   // force a refresh. This replaces the old loadAllData() that fetched all seven
   // endpoints serially on every tab change.
-  const ALL_RESOURCES = ["categories", "specifications", "faqs", "blogs", "products", "inquiries", "orders"];
+  const ALL_RESOURCES = ["stats", "categories", "specifications", "faqs", "blogs", "products", "inquiries", "orders"];
   const TAB_RESOURCES = {
-    dashboard: ["products", "categories", "blogs", "orders", "inquiries"],
+    dashboard: ["stats"],
     products: ["products", "categories"],
     categories: ["categories"],
     specifications: ["specifications"],
@@ -184,7 +184,11 @@ export default function AdminDashboard() {
   const loadedRef = useRef({});
 
   const fetchResource = async (name, headers) => {
-    if (name === "categories") {
+    if (name === "stats") {
+      const r = await fetch("/api/stats", { headers });
+      const d = r.ok ? await r.json() : null;
+      setStats(d && typeof d === "object" ? d : null);
+    } else if (name === "categories") {
       const d = await (await fetch("/api/categories", { headers })).json();
       setCategories(Array.isArray(d) ? d : []);
     } else if (name === "specifications") {
@@ -850,11 +854,11 @@ export default function AdminDashboard() {
   );
 
   const statCards = [
-    { label: "Products", value: products.length },
-    { label: "Categories", value: categories.length },
-    { label: "Articles", value: blogs.length },
-    { label: "Orders", value: orders.length, accent: "crimson" },
-    { label: "Inquiries", value: inquiries.length },
+    { label: "Products", value: stats?.products ?? 0 },
+    { label: "Categories", value: stats?.categories ?? 0 },
+    { label: "Articles", value: stats?.blogs ?? 0 },
+    { label: "Orders", value: stats?.orders ?? 0, accent: "crimson" },
+    { label: "Inquiries", value: stats?.inquiries ?? 0 },
   ];
 
   // Shared Tailwind class strings for consistent tables across tabs
@@ -886,62 +890,17 @@ export default function AdminDashboard() {
           <>
             {/* ── TAB: DASHBOARD ── */}
             {activeTab === "dashboard" && (
-              <div className="space-y-6">
-                <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-                  {statCards.map((s) => (
-                    <StatCard
-                      key={s.label}
-                      label={s.label}
-                      value={s.value}
-                      accent={s.accent}
-                      icon={<span className="text-lg">◆</span>}
-                    />
-                  ))}
-                </section>
-
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <Card title="Sales Overview">
-                    <ChartPlaceholder type="bar" height={220} />
-                  </Card>
-                  <Card title="Traffic Trend">
-                    <ChartPlaceholder type="line" height={220} />
-                  </Card>
-                </div>
-
-                <Card title="Recent Contact Inquiries" bodyClassName="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-line bg-sand text-[0.7rem] uppercase tracking-wide text-gray-500">
-                          <th className="px-5 py-3 font-bold">Name</th>
-                          <th className="px-5 py-3 font-bold">Email</th>
-                          <th className="px-5 py-3 font-bold">Phone</th>
-                          <th className="px-5 py-3 font-bold">Message</th>
-                          <th className="px-5 py-3 font-bold">Received</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {inquiries.slice(0, 5).map((inq) => (
-                          <tr key={inq.id} className="border-b border-line transition-colors hover:bg-sand">
-                            <td className="px-5 py-3 font-medium text-ink">{inq.name}</td>
-                            <td className="px-5 py-3 text-gray-600">{inq.email}</td>
-                            <td className="px-5 py-3 text-gray-600">{inq.phone || "—"}</td>
-                            <td className="px-5 py-3 text-gray-600">{inq.message}</td>
-                            <td className="whitespace-nowrap px-5 py-3 text-gray-500">{new Date(inq.created_at).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                        {inquiries.length === 0 && (
-                          <tr>
-                            <td colSpan="5" className="px-5 py-10 text-center italic text-gray-400">
-                              No messages received.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-              </div>
+              <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+                {statCards.map((s) => (
+                  <StatCard
+                    key={s.label}
+                    label={s.label}
+                    value={s.value}
+                    accent={s.accent}
+                    icon={<span className="text-lg">◆</span>}
+                  />
+                ))}
+              </section>
             )}
 
             {/* ── TAB: PRODUCTS ── */}

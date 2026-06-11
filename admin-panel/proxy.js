@@ -82,6 +82,7 @@ export function proxy(req) {
     (method === "POST" || method === "PUT" || method === "DELETE") && startsWithAny(pathname, CATALOG);
   const isAdminArea =
     pathname === "/api/db-init" ||
+    pathname === "/api/stats" ||
     startsWithAny(pathname, ["/api/upload"]) ||
     (pathname === "/api/contact" && method === "GET") ||
     isCatalogWrite;
