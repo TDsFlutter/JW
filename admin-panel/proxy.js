@@ -14,7 +14,7 @@ function deny(status, error) {
   return NextResponse.json({ error }, { status, headers: CORS });
 }
 
-// Edge-safe base64url JWT payload decode (no Node Buffer in middleware runtime).
+// Edge-safe base64url JWT payload decode (no Node Buffer in this runtime).
 function decodeJwt(token) {
   try {
     const part = token.split(".")[1];
@@ -59,7 +59,7 @@ function getClaims(req) {
 const CATALOG = ["/api/products", "/api/categories", "/api/blogs", "/api/faqs", "/api/specifications"];
 const startsWithAny = (path, list) => list.some((p) => path === p || path.startsWith(p + "/"));
 
-export function middleware(req) {
+export function proxy(req) {
   const { pathname, searchParams } = req.nextUrl;
   const method = req.method;
 
