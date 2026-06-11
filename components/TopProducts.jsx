@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { getActiveProducts } from "@/lib/productsCache";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import styles from "./TopProducts.module.css";
 
@@ -25,15 +25,8 @@ export default function TopProducts() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   useEffect(() => {
-    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
-    fetch(`${ADMIN_URL}/api/products?status=Active`)
-      .then((res) => {
-        if (res.ok) return res.json();
-        throw new Error("API failed");
-      })
-      .then((data) => {
-        setProductList(data);
-      })
+    getActiveProducts()
+      .then((data) => setProductList(data))
       .catch((e) => {
         console.error("Error loading products for TopProducts:", e);
       });

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { isFirebaseConfigured, auth } from "@/lib/firebase";
@@ -164,68 +164,83 @@ export default function AdminDashboard() {
     }
   };
 
-  // Load All Data from MySQL APIs
-  const loadAllData = async () => {
+  // ── Lazy, per-tab data loading ────────────────────────────────────────────
+  // Each tab fetches ONLY the resources it needs, in parallel, and caches the
+  // result so switching tabs (or opening drawers) never re-fetches. Mutations
+  // force a refresh. This replaces the old loadAllData() that fetched all seven
+  // endpoints serially on every tab change.
+  const ALL_RESOURCES = ["categories", "specifications", "faqs", "blogs", "products", "inquiries", "orders"];
+  const TAB_RESOURCES = {
+    dashboard: ["products", "categories", "blogs", "orders", "inquiries"],
+    products: ["products", "categories"],
+    categories: ["categories"],
+    specifications: ["specifications"],
+    blogs: ["blogs"],
+    faqs: ["faqs"],
+    orders: ["orders"],
+    inquiries: ["inquiries"],
+  };
+
+  const loadedRef = useRef({});
+
+  const fetchResource = async (name, headers) => {
+    if (name === "categories") {
+      const d = await (await fetch("/api/categories", { headers })).json();
+      setCategories(Array.isArray(d) ? d : []);
+    } else if (name === "specifications") {
+      const d = await (await fetch("/api/specifications", { headers })).json();
+      setSpecFields(Array.isArray(d) ? d : []);
+    } else if (name === "faqs") {
+      const d = await (await fetch("/api/faqs", { headers })).json();
+      setFaqs(Array.isArray(d) ? d : []);
+    } else if (name === "blogs") {
+      const d = await (await fetch("/api/blogs?status=all", { headers })).json();
+      setBlogs(Array.isArray(d) ? d : []);
+    } else if (name === "products") {
+      const d = await (await fetch("/api/products?status=all", { headers })).json();
+      setProducts(Array.isArray(d) ? d : []);
+    } else if (name === "inquiries") {
+      const r = await fetch("/api/contact", { headers });
+      const d = r.ok ? await r.json() : [];
+      setInquiries(Array.isArray(d) ? d : []);
+    } else if (name === "orders") {
+      const r = await fetch("/api/orders", { headers });
+      const d = r.ok ? await r.json() : [];
+      setOrders(Array.isArray(d) ? d : []);
+    }
+  };
+
+  // Fetch the given resources (in parallel). Skips ones already cached unless
+  // force=true. Only flips the loading spinner when there's actually work to do.
+  const loadResources = async (names, { force = false } = {}) => {
+    const todo = (names || []).filter((n) => force || !loadedRef.current[n]);
+    if (todo.length === 0) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const headers = await getHeaders();
-
-      // Fetch Categories
-      const catRes = await fetch("/api/categories", { headers });
-      const catsData = await catRes.json();
-      setCategories(Array.isArray(catsData) ? catsData : []);
-
-      // Fetch Spec Fields
-      const specRes = await fetch("/api/specifications", { headers });
-      const specsData = await specRes.json();
-      setSpecFields(Array.isArray(specsData) ? specsData : []);
-
-      // Fetch FAQs
-      const faqRes = await fetch("/api/faqs", { headers });
-      const faqsData = await faqRes.json();
-      setFaqs(Array.isArray(faqsData) ? faqsData : []);
-
-      // Fetch Blogs
-      const blogRes = await fetch("/api/blogs?status=all", { headers });
-      const blogsData = await blogRes.json();
-      setBlogs(Array.isArray(blogsData) ? blogsData : []);
-
-      // Fetch Products
-      const prodRes = await fetch("/api/products?status=all", { headers });
-      const prodsData = await prodRes.json();
-      setProducts(Array.isArray(prodsData) ? prodsData : []);
-
-      // Fetch Inquiries
-      const inqRes = await fetch("/api/contact", { headers });
-      if (inqRes.status === 200) {
-        const inqsData = await inqRes.json();
-        setInquiries(Array.isArray(inqsData) ? inqsData : []);
-      } else {
-        setInquiries([]);
-      }
-
-      // Fetch Orders
-      const orderRes = await fetch("/api/orders", { headers });
-      if (orderRes.ok) {
-        const ordersData = await orderRes.json();
-        setOrders(Array.isArray(ordersData) ? ordersData : []);
-      } else {
-        setOrders([]);
-      }
-
+      await Promise.all(todo.map((n) => fetchResource(n, headers)));
+      todo.forEach((n) => { loadedRef.current[n] = true; });
     } catch (err) {
-      console.error("Error loading dashboard data:", err);
-      setError("Failed to load backend data. Ensure database is running and initialized.");
+      console.error("Error loading data:", err);
+      setError("Failed to load backend data. Ensure the database is initialized.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Force-refresh every resource (used after a full DB re-init).
+  const loadAllData = () => loadResources(ALL_RESOURCES, { force: true });
+
+  // Load only the active tab's data, once it's active — not everything upfront.
   useEffect(() => {
     if (currentUser && isAdmin) {
-      loadAllData();
+      loadResources(TAB_RESOURCES[activeTab] || []);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isAdmin, activeTab]);
 
   // ── File Upload Helper (Cloudflare R2) ────────────────────────────────────
