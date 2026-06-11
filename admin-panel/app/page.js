@@ -24,10 +24,11 @@ export default function AdminDashboard() {
   // Auth guard — redirect non-admin users
   useEffect(() => {
     if (!authLoading) {
-      if (!currentUser) {
-        router.push("/login");
-      } else if (!isAdmin) {
-        window.location.href = MAIN_SITE_URL;
+      // Logged out OR logged in without admin rights → stay in the admin app on
+      // the login screen (the login page shows an "not an admin" message).
+      // Never bounce to the public storefront from here.
+      if (!currentUser || !isAdmin) {
+        router.replace("/login");
       }
     }
   }, [currentUser, isAdmin, authLoading, router]);

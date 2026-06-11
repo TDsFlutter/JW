@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { logout, isFirebaseConfigured } from "@/lib/firebase";
+import { logout, isFirebaseConfigured, auth } from "@/lib/firebase";
 import { products } from "@/data/products";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import Link from "next/link";
@@ -43,7 +43,12 @@ export default function ProfilePage() {
 
       const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
       try {
-        const res = await fetch(`${ADMIN_URL}/api/orders?user_id=${currentUser.uid}`);
+        const token = isFirebaseConfigured && auth?.currentUser
+          ? await auth.currentUser.getIdToken()
+          : currentUser.uid;
+        const res = await fetch(`${ADMIN_URL}/api/orders?user_id=${currentUser.uid}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (res.ok) {
           const data = await res.json();
           setOrders(data);
