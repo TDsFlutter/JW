@@ -1,13 +1,6 @@
-import { getDb } from './mongodb';
-
-async function findUser(uid) {
-  try {
-    const db = await getDb();
-    return await db.collection('users').findOne({ _id: uid });
-  } catch (e) {
-    return null;
-  }
-}
+// Admin access is restricted to a SINGLE identity.
+const ADMIN_EMAIL = 'admin@jw.com';
+const ADMIN_UID = 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2';
 
 function decodeJwt(token) {
   try {
@@ -21,40 +14,19 @@ function decodeJwt(token) {
 }
 
 /**
- * Verifies if the incoming request is authenticated as an Admin.
- * Supports both real Firebase JWTs and mock development tokens.
- * @param {Request} req - Next.js Request object.
- * @returns {Promise<object|boolean>} - User profile object if verified, false otherwise.
+ * Verifies the request belongs to the one authorized admin.
+ * Only a valid Firebase ID token whose email is ADMIN_EMAIL or whose uid is
+ * ADMIN_UID is accepted — no mock-token bypass, no role-based or email-pattern grants.
+ * @param {Request} req
+ * @returns {Promise<object|false>}
  */
 export async function verifyAdminRequest(req) {
   const authHeader = req.headers.get('authorization') || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return false;
-  }
+  if (!authHeader.startsWith('Bearer ')) return false;
 
   const token = authHeader.split(' ')[1];
   if (!token) return false;
 
-  // 1. Mock token check (for offline local development)
-  if (token === 'mock-admin-token') {
-    return { uid: 'mock-admin-uid', email: 'admin@ella-jewelry.com', role: 'admin', displayName: 'Mock Admin' };
-  }
-
-  if (token.startsWith('mock_uid_') || token.startsWith('mock_google_') || token.startsWith('mock_apple_') || token.startsWith('mock-')) {
-    // Check role in database for mock users
-    const mockUser = await findUser(token);
-    if (mockUser && mockUser.role === 'admin') {
-      return mockUser;
-    }
-
-    // Fallback if email has admin or if it's the specific admin
-    if (token.includes('admin')) {
-      return { uid: token, email: 'admin@ella-jewelry.com', role: 'admin', displayName: 'Admin' };
-    }
-    return false;
-  }
-
-  // 2. Real Firebase ID Token check (decoded JWT)
   const payload = decodeJwt(token);
   if (!payload) return false;
 
@@ -62,37 +34,20 @@ export async function verifyAdminRequest(req) {
   const now = Math.floor(Date.now() / 1000);
 
   // Validate token claims
-  if (payload.exp < now) {
-    console.warn('Firebase token expired');
-    return false;
-  }
-  if (projectId && payload.aud !== projectId) {
-    console.warn('Audience mismatch:', payload.aud, 'expected:', projectId);
-    return false;
-  }
-  if (projectId && payload.iss !== `https://securetoken.google.com/${projectId}`) {
-    console.warn('Issuer mismatch:', payload.iss);
-    return false;
-  }
+  if (payload.exp < now) return false;
+  if (projectId && payload.aud !== projectId) return false;
+  if (projectId && payload.iss !== `https://securetoken.google.com/${projectId}`) return false;
 
   const uid = payload.user_id || payload.sub;
-  if (!uid) return false;
+  const email = (payload.email || '').toLowerCase();
 
-  // Hardcoded super-admin UID — always granted admin access
-  if (uid === '0AZ01BRGcUbmRWiG3pcMBeBXzwx1') {
-    return { uid, email: payload.email || '', role: 'admin', displayName: payload.name || 'Admin' };
-  }
-
-  // Query database for user's role
-  const dbUser = await findUser(uid);
-  if (dbUser && dbUser.role === 'admin') {
-    return dbUser;
-  }
-
-  // Fallback check based on email
-  const email = payload.email || '';
-  if (email === 'trunaldungarani15@gmail.com' || email.toLowerCase().includes('admin')) {
-    return { uid, email, role: 'admin', displayName: payload.name || email.split('@')[0] };
+  if (uid === ADMIN_UID || email === ADMIN_EMAIL) {
+    return {
+      uid,
+      email: payload.email || '',
+      role: 'admin',
+      displayName: payload.name || 'Admin',
+    };
   }
 
   return false;

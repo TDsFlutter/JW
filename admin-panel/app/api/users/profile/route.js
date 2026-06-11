@@ -29,8 +29,7 @@ function getAuthenticatedUser(req) {
   if (!token) return null;
 
   if (token.startsWith('mock_uid_') || token.startsWith('mock_google_') || token.startsWith('mock_apple_') || token.startsWith('mock-')) {
-    const role = token.includes('admin') ? 'admin' : 'customer';
-    return { uid: token, email: 'mockuser@example.com', role };
+    return { uid: token, email: 'mockuser@example.com', role: 'customer' };
   }
 
   const payload = decodeJwt(token);
@@ -82,8 +81,8 @@ export async function GET(req) {
     if (!user) {
       // Return a default user structure (also used when the DB is unavailable)
       const defaultRole =
-        uid === '0AZ01BRGcUbmRWiG3pcMBeBXzwx1' ||
-        (authUser?.email || '').toLowerCase().includes('admin')
+        uid === 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2' ||
+        (authUser?.email || '').toLowerCase() === 'admin@jw.com'
           ? 'admin'
           : 'customer';
       return NextResponse.json({
@@ -147,8 +146,8 @@ export async function POST(req) {
     if (admin && role) {
       finalRole = role; // admin can set roles
     } else if (!existing) {
-      // First signup of the primary admin email or hardcoded super-admin UID
-      if (email === 'trunaldungarani15@gmail.com' || email.toLowerCase().includes('admin') || uid === '0AZ01BRGcUbmRWiG3pcMBeBXzwx1') {
+      // Only the single authorized admin identity gets the admin role
+      if (email.toLowerCase() === 'admin@jw.com' || uid === 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2') {
         finalRole = 'admin';
       }
     }

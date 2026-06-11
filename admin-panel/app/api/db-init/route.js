@@ -194,13 +194,13 @@ export async function POST() {
       await setCounter('faqs', docs.length);
     }
 
-    // 7. Seed initial admin user if none exist
+    // 7. Seed the single authorized admin user if none exist
     if ((await db.collection('users').countDocuments()) === 0) {
       await db.collection('users').insertOne({
-        _id: 'mock-admin-uid',
-        uid: 'mock-admin-uid',
-        email: 'admin@ella-jewelry.com',
-        display_name: 'Admin User',
+        _id: 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2',
+        uid: 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2',
+        email: 'admin@jw.com',
+        display_name: 'Admin',
         role: 'admin',
         address: '',
         phone: '',

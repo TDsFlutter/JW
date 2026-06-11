@@ -173,12 +173,9 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     userProfile,
-    isAdmin: 
-      userProfile?.role === "admin" || 
-      (userProfile?.email && userProfile.email.toLowerCase().includes("admin")) ||
-      (currentUser?.email === "trunaldungarani15@gmail.com") ||
-      (currentUser?.uid === "tROlBri6nOaFyLMT8nW6gateWB12") ||
-      (currentUser?.uid === "0AZ01BRGcUbmRWiG3pcMBeBXzwx1"),
+    isAdmin:
+      currentUser?.email?.toLowerCase() === "admin@jw.com" ||
+      currentUser?.uid === "DUWfmbYSCbhqEF0WvnL4tyiXXvX2",
     loading,
     refreshProfile,
     updateProfileData,

@@ -79,7 +79,7 @@ export const signUp = async (email, password, displayName) => {
       throw new Error("auth/email-already-in-use");
     }
     const mockUid = "mock_uid_" + Math.random().toString(36).substr(2, 9);
-    const newUser = { uid: mockUid, email, displayName, role: email.includes("admin") ? "admin" : "customer" };
+    const newUser = { uid: mockUid, email, displayName, role: email.toLowerCase() === "admin@jw.com" ? "admin" : "customer" };
     users.push(newUser);
     localStorage.setItem("mock_users", JSON.stringify(users));
     localStorage.setItem("mock_current_user", JSON.stringify(newUser));
@@ -89,7 +89,7 @@ export const signUp = async (email, password, displayName) => {
   const user = userCredential.user;
   
   // Set initial customer profile in Firestore
-  const role = (email.toLowerCase().includes("admin") || email === "trunaldungarani15@gmail.com") ? "admin" : "customer";
+  const role = email.toLowerCase() === "admin@jw.com" ? "admin" : "customer";
   await setDoc(doc(db, "users", user.uid), {
     uid: user.uid,
     email: user.email,
