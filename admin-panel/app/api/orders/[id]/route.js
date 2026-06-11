@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -10,6 +10,12 @@ const corsHeaders = {
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
+}
+
+function lookupBy(id) {
+  const or = [{ order_number: id }];
+  if (!isNaN(id)) or.push({ id: parseInt(id, 10) });
+  return { $or: or };
 }
 
 // PUT (update status) order (Admin Auth)
@@ -27,12 +33,13 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'Status is required' }, { status: 400, headers: corsHeaders });
     }
 
-    const result = await query(
-      'UPDATE orders SET status = ? WHERE id = ? OR order_number = ?',
-      [status, isNaN(id) ? -1 : parseInt(id, 10), id]
+    const db = await getDb();
+    const result = await db.collection('orders').updateOne(
+      lookupBy(id),
+      { $set: { status, updated_at: new Date().toISOString() } }
     );
 
-    if (result.affectedRows === 0) {
+    if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: corsHeaders });
     }
 
@@ -52,10 +59,10 @@ export async function DELETE(req, { params }) {
     }
 
     const { id } = await params;
+    const db = await getDb();
+    const result = await db.collection('orders').deleteOne(lookupBy(id));
 
-    const result = await query('DELETE FROM orders WHERE id = ? OR order_number = ?', [isNaN(id) ? -1 : parseInt(id, 10), id]);
-
-    if (result.affectedRows === 0) {
+    if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: corsHeaders });
     }
 

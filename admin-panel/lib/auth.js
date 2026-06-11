@@ -1,4 +1,13 @@
-import { query } from './db';
+import { getDb } from './mongodb';
+
+async function findUser(uid) {
+  try {
+    const db = await getDb();
+    return await db.collection('users').findOne({ _id: uid });
+  } catch (e) {
+    return null;
+  }
+}
 
 function decodeJwt(token) {
   try {
@@ -33,13 +42,9 @@ export async function verifyAdminRequest(req) {
 
   if (token.startsWith('mock_uid_') || token.startsWith('mock_google_') || token.startsWith('mock_apple_') || token.startsWith('mock-')) {
     // Check role in database for mock users
-    try {
-      const users = await query('SELECT * FROM users WHERE uid = ?', [token]);
-      if (users.length > 0 && users[0].role === 'admin') {
-        return users[0];
-      }
-    } catch (_) {
-      // Ignore DB errors if not initialized yet
+    const mockUser = await findUser(token);
+    if (mockUser && mockUser.role === 'admin') {
+      return mockUser;
     }
 
     // Fallback if email has admin or if it's the specific admin
@@ -73,14 +78,15 @@ export async function verifyAdminRequest(req) {
   const uid = payload.user_id || payload.sub;
   if (!uid) return false;
 
-  // Query MySQL database for user's role
-  try {
-    const users = await query('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (users.length > 0 && users[0].role === 'admin') {
-      return users[0];
-    }
-  } catch (error) {
-    console.error('Error querying user in auth helper:', error);
+  // Hardcoded super-admin UID — always granted admin access
+  if (uid === '0AZ01BRGcUbmRWiG3pcMBeBXzwx1') {
+    return { uid, email: payload.email || '', role: 'admin', displayName: payload.name || 'Admin' };
+  }
+
+  // Query database for user's role
+  const dbUser = await findUser(uid);
+  if (dbUser && dbUser.role === 'admin') {
+    return dbUser;
   }
 
   // Fallback check based on email

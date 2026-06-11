@@ -18,97 +18,6 @@ const categoryMapping = {
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-const mockProductsByCategory = {
-  "Rings": [
-    {
-      id: "mock-r1",
-      name: "Diamond In Platinum",
-      images: ["/assets/image 1.png"],
-      slug: "diamond-in-platinum-ring",
-      price: 45000,
-      category: "Rings",
-    },
-    {
-      id: "mock-r2",
-      name: "Makers Slice Ring",
-      images: ["/assets/image 2.png"],
-      slug: "makers-slice-ring",
-      price: 25000,
-      category: "Rings",
-    },
-    {
-      id: "mock-r3",
-      name: "Nesting Band Ring",
-      images: ["/assets/image 4.png"],
-      slug: "nesting-band-ring",
-      price: 32000,
-      category: "Rings",
-    },
-    {
-      id: "mock-r4",
-      name: "Olive Leaf Band Ring",
-      images: ["/assets/Rectangle 15.png"],
-      slug: "olive-leaf-band-ring",
-      price: 28000,
-      category: "Rings",
-    },
-  ],
-  "Bracelets": [
-    {
-      id: "mock-b1",
-      name: "Classic Tennis Bracelet",
-      images: ["/assets/Rectangle 22.png"],
-      slug: "classic-tennis-bracelet",
-      price: 75000,
-      category: "Bracelets",
-    },
-    {
-      id: "mock-b2",
-      name: "Gold Bangle Bracelet",
-      images: ["/assets/Rectangle 23.png"],
-      slug: "gold-bangle-bracelet",
-      price: 62000,
-      category: "Bracelets",
-    },
-  ],
-  "Pendants": [
-    {
-      id: "mock-p1",
-      name: "Heart Solitaire Pendant",
-      images: ["/assets/Rectangle 13.png"],
-      slug: "heart-solitaire-pendant",
-      price: 18000,
-      category: "Pendants",
-    },
-    {
-      id: "mock-p2",
-      name: "Minimalist Gold Chain Pendant",
-      images: ["/assets/Rectangle 14.png"],
-      slug: "minimalist-gold-chain-pendant",
-      price: 15000,
-      category: "Pendants",
-    },
-  ],
-  "Earrings": [
-    {
-      id: "mock-e1",
-      name: "Diamond Stud Earrings",
-      images: ["/assets/Rectangle 11.png"],
-      slug: "diamond-stud-earrings",
-      price: 35000,
-      category: "Earrings",
-    },
-    {
-      id: "mock-e2",
-      name: "Silver Hoop Earrings",
-      images: ["/assets/Rectangle 16.png"],
-      slug: "silver-hoop-earrings",
-      price: 12000,
-      category: "Earrings",
-    },
-  ],
-};
-
 export default function TopProducts() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [productList, setProductList] = useState([]);
@@ -138,10 +47,7 @@ export default function TopProducts() {
     (p) => p.category && p.category.toLowerCase() === mappedCategory.toLowerCase()
   );
 
-  // If we have database products, use them, otherwise use category mock fallback
-  const displayedProducts = dbFiltered.length > 0 
-    ? dbFiltered.slice(0, 4) 
-    : (mockProductsByCategory[mappedCategory] || []);
+  const displayedProducts = dbFiltered.slice(0, 4);
 
   return (
     <section className={styles.section} id="top-products" ref={ref}>

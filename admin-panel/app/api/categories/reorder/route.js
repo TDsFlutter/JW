@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -26,9 +26,14 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Items list is required' }, { status: 400, headers: corsHeaders });
     }
 
-    for (const item of items) {
-      await query('UPDATE categories SET display_order = ? WHERE id = ?', [item.display_order, item.id]);
-    }
+    const db = await getDb();
+    const ops = items.map((item) => ({
+      updateOne: {
+        filter: { id: parseInt(item.id, 10) },
+        update: { $set: { display_order: item.display_order } },
+      },
+    }));
+    if (ops.length > 0) await db.collection('categories').bulkWrite(ops);
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
 

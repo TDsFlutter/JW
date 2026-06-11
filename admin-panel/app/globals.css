@@ -1,3 +1,39 @@
+@import "tailwindcss";
+
+/* ===== TAILWIND THEME (brand tokens → utilities) ===== */
+@theme {
+  /* Brand palette */
+  --color-crimson: #9b0e2e;
+  --color-crimson-dark: #7a0b24;
+  --color-crimson-light: #b5163a;
+  --color-gold: #b59410;
+  --color-gold-soft: #c8a951;
+  --color-ink: #1a1a1a;
+  --color-ink-soft: #2e2e2c;
+
+  /* Surfaces & lines */
+  --color-cream: #faf7f2;
+  --color-sand: #faf9f6;
+  --color-canvas: #f7f6f2;
+  --color-line: #eae6df;
+  --color-line-soft: #f0eded;
+
+  /* Status */
+  --color-ok: #52c41a;
+  --color-ok-bg: #f6ffed;
+  --color-warn: #faad14;
+  --color-warn-bg: #fffbe6;
+  --color-danger: #f5222d;
+  --color-danger-bg: #fff1f0;
+
+  /* Typography */
+  --font-sans: var(--font-lato), "Lato", sans-serif;
+  --font-serif: var(--font-baskerville), "Libre Baskerville", serif;
+
+  /* Radius scale */
+  --radius-card: 6px;
+}
+
 /* ===== ADMIN PANEL DESIGN TOKENS ===== */
 :root {
   --crimson: #9B0E2E;
@@ -29,59 +65,58 @@
   --max-width: 1320px;
 }
 
-/* ===== CSS RESET ===== */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ===== CSS RESET (in @layer base so Tailwind utilities override it) ===== */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  max-width: 100%;
-}
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
 
-body {
-  font-family: var(--font-lato), 'Lato', sans-serif;
-  color: var(--text-body);
-  background: var(--bg-white);
-  line-height: 1.6;
-  overflow-x: hidden;
-}
+  body {
+    font-family: var(--font-lato), 'Lato', sans-serif;
+    color: var(--text-body);
+    background: var(--bg-white);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
 
-a {
-  text-decoration: none;
-  color: inherit;
-  transition: color var(--transition-fast);
-}
+  a {
+    text-decoration: none;
+    color: inherit;
+    transition: color var(--transition-fast);
+  }
 
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: inherit;
-  outline: none;
-}
+  /* Scope the element resets to legacy CSS-module screens only, so they
+     don't strip backgrounds/borders from Tailwind-styled buttons/inputs. */
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
 
-input {
-  outline: none;
-  border: none;
-  font-family: inherit;
-}
+  input {
+    font-family: inherit;
+  }
 
-ul, ol {
-  list-style: none;
+  ul, ol {
+    list-style: none;
+  }
 }
 
 /* ===== UTILITY CLASSES ===== */

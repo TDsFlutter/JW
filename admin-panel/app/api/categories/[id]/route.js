@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -21,23 +21,25 @@ export async function PUT(req, { params }) {
     }
 
     const { id } = await params;
-    const { name, sku_prefix, display_order } = await req.json();
+    const catId = parseInt(id, 10);
+    const { name, sku_prefix, display_order, genders } = await req.json();
 
     if (!name || !sku_prefix) {
       return NextResponse.json({ error: 'Name and SKU Prefix are required' }, { status: 400, headers: corsHeaders });
     }
 
     const prefix = sku_prefix.trim().toUpperCase();
+    const cleanGenders = Array.isArray(genders) ? genders : [];
 
-    // Check unique prefix excluding current category
-    const existing = await query('SELECT id FROM categories WHERE sku_prefix = ? AND id != ?', [prefix, id]);
-    if (existing.length > 0) {
+    const db = await getDb();
+    const existing = await db.collection('categories').findOne({ sku_prefix: prefix, id: { $ne: catId } });
+    if (existing) {
       return NextResponse.json({ error: 'SKU Prefix must be unique' }, { status: 400, headers: corsHeaders });
     }
 
-    await query(
-      'UPDATE categories SET name = ?, sku_prefix = ?, display_order = ? WHERE id = ?',
-      [name.trim(), prefix, display_order || 0, id]
+    await db.collection('categories').updateOne(
+      { id: catId },
+      { $set: { name: name.trim(), sku_prefix: prefix, display_order: display_order || 0, genders: cleanGenders, updated_at: new Date().toISOString() } }
     );
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
@@ -47,7 +49,7 @@ export async function PUT(req, { params }) {
   }
 }
 
-// Delete category (Admin Auth)
+// Delete category (Admin Auth) — cascades to products in this category
 export async function DELETE(req, { params }) {
   try {
     const admin = await verifyAdminRequest(req);
@@ -56,10 +58,12 @@ export async function DELETE(req, { params }) {
     }
 
     const { id } = await params;
+    const catId = parseInt(id, 10);
 
-    // Check if products exist in this category before deleting (or cascade)
-    // The foreign key is configured ON DELETE CASCADE, but it is safer to warn/inform
-    await query('DELETE FROM categories WHERE id = ?', [id]);
+    const db = await getDb();
+    // Cascade: remove products belonging to this category (mirrors MySQL ON DELETE CASCADE)
+    await db.collection('products').deleteMany({ category_id: catId });
+    await db.collection('categories').deleteOne({ id: catId });
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
 

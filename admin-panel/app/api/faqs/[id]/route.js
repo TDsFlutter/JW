@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -27,12 +27,13 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'Question and Answer are required' }, { status: 400, headers: corsHeaders });
     }
 
-    const result = await query(
-      'UPDATE faqs SET question = ?, answer = ?, display_order = ? WHERE id = ?',
-      [question.trim(), answer.trim(), display_order || 0, id]
+    const db = await getDb();
+    const result = await db.collection('faqs').updateOne(
+      { id: parseInt(id, 10) },
+      { $set: { question: question.trim(), answer: answer.trim(), display_order: display_order || 0, updated_at: new Date().toISOString() } }
     );
 
-    if (result.affectedRows === 0) {
+    if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'FAQ not found' }, { status: 404, headers: corsHeaders });
     }
 
@@ -52,10 +53,10 @@ export async function DELETE(req, { params }) {
     }
 
     const { id } = await params;
+    const db = await getDb();
+    const result = await db.collection('faqs').deleteOne({ id: parseInt(id, 10) });
 
-    const result = await query('DELETE FROM faqs WHERE id = ?', [id]);
-
-    if (result.affectedRows === 0) {
+    if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'FAQ not found' }, { status: 404, headers: corsHeaders });
     }
 

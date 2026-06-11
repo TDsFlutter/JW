@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb, getNextId } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -15,7 +15,11 @@ export async function OPTIONS() {
 // Get all specification fields
 export async function GET() {
   try {
-    const fields = await query('SELECT * FROM specification_fields ORDER BY display_order ASC');
+    const db = await getDb();
+    const fields = await db.collection('specification_fields')
+      .find({}, { projection: { _id: 0 } })
+      .sort({ display_order: 1 })
+      .toArray();
     return NextResponse.json(fields, { headers: corsHeaders });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
@@ -38,24 +42,22 @@ export async function POST(req) {
 
     const cleanName = name.trim();
 
-    // Check unique field name
-    const existing = await query('SELECT id FROM specification_fields WHERE name = ?', [cleanName]);
-    if (existing.length > 0) {
+    const db = await getDb();
+    const existing = await db.collection('specification_fields').findOne({ name: cleanName });
+    if (existing) {
       return NextResponse.json({ error: 'Field name already exists' }, { status: 400, headers: corsHeaders });
     }
 
-    const result = await query(
-      'INSERT INTO specification_fields (name, display_order) VALUES (?, ?)',
-      [cleanName, display_order || 0]
-    );
+    const id = await getNextId('specification_fields');
+    await db.collection('specification_fields').insertOne({
+      id,
+      name: cleanName,
+      display_order: display_order || 0,
+    });
 
     return NextResponse.json({
       success: true,
-      field: {
-        id: result.insertId,
-        name: cleanName,
-        display_order: display_order || 0
-      }
+      field: { id, name: cleanName, display_order: display_order || 0 }
     }, { headers: corsHeaders });
 
   } catch (error) {

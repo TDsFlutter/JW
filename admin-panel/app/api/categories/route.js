@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb, getNextId } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -15,7 +15,11 @@ export async function OPTIONS() {
 // Get all categories sorted by display_order
 export async function GET() {
   try {
-    const categories = await query('SELECT * FROM categories ORDER BY display_order ASC');
+    const db = await getDb();
+    const categories = await db.collection('categories')
+      .find({}, { projection: { _id: 0 } })
+      .sort({ display_order: 1 })
+      .toArray();
     return NextResponse.json(categories, { headers: corsHeaders });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
@@ -30,34 +34,36 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
 
-    const { name, sku_prefix, display_order } = await req.json();
+    const { name, sku_prefix, display_order, genders } = await req.json();
 
     if (!name || !sku_prefix) {
       return NextResponse.json({ error: 'Name and SKU Prefix are required' }, { status: 400, headers: corsHeaders });
     }
 
-    // Force SKU prefix to be uppercase
     const prefix = sku_prefix.trim().toUpperCase();
+    const cleanGenders = Array.isArray(genders) ? genders : [];
 
-    // Check if prefix already exists
-    const existing = await query('SELECT id FROM categories WHERE sku_prefix = ?', [prefix]);
-    if (existing.length > 0) {
+    const db = await getDb();
+    const existing = await db.collection('categories').findOne({ sku_prefix: prefix });
+    if (existing) {
       return NextResponse.json({ error: 'SKU Prefix must be unique' }, { status: 400, headers: corsHeaders });
     }
 
-    const result = await query(
-      'INSERT INTO categories (name, sku_prefix, display_order) VALUES (?, ?, ?)',
-      [name.trim(), prefix, display_order || 0]
-    );
+    const id = await getNextId('categories');
+    const now = new Date().toISOString();
+    await db.collection('categories').insertOne({
+      id,
+      name: name.trim(),
+      sku_prefix: prefix,
+      display_order: display_order || 0,
+      genders: cleanGenders,
+      created_at: now,
+      updated_at: now,
+    });
 
     return NextResponse.json({
       success: true,
-      category: {
-        id: result.insertId,
-        name: name.trim(),
-        sku_prefix: prefix,
-        display_order: display_order || 0,
-      }
+      category: { id, name: name.trim(), sku_prefix: prefix, display_order: display_order || 0, genders: cleanGenders }
     }, { headers: corsHeaders });
 
   } catch (error) {

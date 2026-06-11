@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb, getNextId } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -20,7 +20,11 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
 
-    const inquiries = await query('SELECT * FROM contact_inquiries ORDER BY created_at DESC');
+    const db = await getDb();
+    const inquiries = await db.collection('contact_inquiries')
+      .find({}, { projection: { _id: 0 } })
+      .sort({ created_at: -1 })
+      .toArray();
     return NextResponse.json(inquiries, { headers: corsHeaders });
 
   } catch (error) {
@@ -37,10 +41,16 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Name, Email, and Message are required' }, { status: 400, headers: corsHeaders });
     }
 
-    await query(
-      'INSERT INTO contact_inquiries (name, email, phone, message) VALUES (?, ?, ?, ?)',
-      [name.trim(), email.trim(), phone || '', message.trim()]
-    );
+    const db = await getDb();
+    const id = await getNextId('contact_inquiries');
+    await db.collection('contact_inquiries').insertOne({
+      id,
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone || '',
+      message: message.trim(),
+      created_at: new Date().toISOString(),
+    });
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
 

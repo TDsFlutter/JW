@@ -5,6 +5,15 @@ import { useAuth } from "@/context/AuthContext";
 import { isFirebaseConfigured, auth } from "@/lib/firebase";
 import Link from "next/link";
 import styles from "./admin.module.css";
+import AdminShell from "@/components/AdminShell";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import StatCard from "@/components/ui/StatCard";
+import Badge from "@/components/ui/Badge";
+import ChartPlaceholder from "@/components/ui/ChartPlaceholder";
+import Modal from "@/components/ui/Modal";
+import { Input, Select, Textarea } from "@/components/ui/Input";
+import { ToastBridge } from "@/components/ui/Toast";
 
 const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_SITE_URL || "http://localhost:3000";
 
@@ -91,6 +100,7 @@ export default function AdminDashboard() {
   const [formCatName, setFormCatName] = useState("");
   const [formCatPrefix, setFormCatPrefix] = useState("");
   const [formCatOrder, setFormCatOrder] = useState("0");
+  const [formCatGenders, setFormCatGenders] = useState([]);
 
   // Form States - Spec Fields
   const [formSpecName, setFormSpecName] = useState("");
@@ -285,7 +295,7 @@ export default function AdminDashboard() {
       setFormProdSalePrice(prod.originalPrice || "");
       setFormProdStatus(prod.status || "Draft");
       setFormProdDisplayOrder(String(prod.display_order || "0"));
-      setFormProdGender(prod.gender || "Unisex");
+      setFormProdGender(prod.gender || "");
       setFormProdAvailability(prod.availability || "Made To Order");
       setFormProdVideoUrl(prod.video_url || "");
       setFormProdImages(Array.isArray(prod.images) && prod.images.length > 0 ? prod.images : [""]);
@@ -309,7 +319,7 @@ export default function AdminDashboard() {
       setFormProdSalePrice("");
       setFormProdStatus("Draft");
       setFormProdDisplayOrder("0");
-      setFormProdGender("Unisex");
+      setFormProdGender("");
       setFormProdAvailability("Made To Order");
       setFormProdVideoUrl("");
       setFormProdImages([""]);
@@ -323,8 +333,8 @@ export default function AdminDashboard() {
     setError("");
     setSuccess("");
 
-    if (!formProdName || !formProdCatId || !formProdBasePrice) {
-      setError("Name, Category, and Base Price are required.");
+    if (!formProdName || !formProdGender || !formProdCatId || !formProdBasePrice) {
+      setError("Name, Category, Sub-category, and Base Price are required.");
       return;
     }
 
@@ -409,11 +419,13 @@ export default function AdminDashboard() {
       setFormCatName(cat.name);
       setFormCatPrefix(cat.sku_prefix);
       setFormCatOrder(String(cat.display_order));
+      setFormCatGenders(Array.isArray(cat.genders) ? cat.genders : []);
     } else {
       setEditingCategory(null);
       setFormCatName("");
       setFormCatPrefix("");
       setFormCatOrder("0");
+      setFormCatGenders([]);
     }
     setIsCatDrawerOpen(true);
   };
@@ -431,7 +443,8 @@ export default function AdminDashboard() {
     const payload = {
       name: formCatName,
       sku_prefix: formCatPrefix,
-      display_order: parseInt(formCatOrder || 0, 10)
+      display_order: parseInt(formCatOrder || 0, 10),
+      genders: formCatGenders
     };
 
     try {
@@ -766,234 +779,143 @@ export default function AdminDashboard() {
 
   if (authLoading || (currentUser && !isAdmin)) {
     return (
-      <div className={styles.adminContainer} style={{ justifyContent: "center", alignItems: "center" }}>
-        <p style={{ fontStyle: "italic", color: "#707070" }}>Verifying credentials...</p>
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <p className="italic text-gray-500">Verifying credentials…</p>
       </div>
     );
   }
 
+  const navItems = [
+    { key: "dashboard", label: "Dashboard" },
+    { key: "products", label: "Products" },
+    { key: "categories", label: "Categories" },
+    { key: "specifications", label: "Specifications" },
+    { key: "blogs", label: "Blogs" },
+    { key: "faqs", label: "FAQs" },
+    { key: "orders", label: "Orders", count: orders.length },
+    { key: "inquiries", label: "Inquiries", count: inquiries.length },
+  ];
+
+  const tabTitles = {
+    dashboard: "Analytics Overview",
+    products: "Product Catalog",
+    categories: "Product Categories",
+    specifications: "Specification Fields",
+    blogs: "Journal & Articles",
+    faqs: "Store FAQ Management",
+    orders: "Order Management",
+    inquiries: "Customer Inquiries",
+  };
+  const tabDescriptions = {
+    dashboard: "Performance metrics, system actions, and recent inquiries.",
+    products: "Manage listing parameters, auto SKU generation, and image gallery.",
+    categories: "Setup category tags, SKU prefixes, and sequence sorting.",
+    specifications: "Add, edit, or remove dynamic specification keys.",
+    blogs: "Publish press releases, style guides, and product announcements.",
+    faqs: "Update dynamic accordion contents for customer support.",
+    orders: "Update customer order statuses and fulfill orders.",
+    inquiries: "Review contact messages and pricing requests from the storefront.",
+  };
+
+  const headerActions = (
+    <>
+      {activeTab === "dashboard" && (
+        <Button onClick={handleDbInitialize} disabled={isInitializing}>
+          {isInitializing ? "Initializing…" : "Initialize Database"}
+        </Button>
+      )}
+      {activeTab === "products" && <Button onClick={() => openProductDrawer()}>+ Add Product</Button>}
+      {activeTab === "categories" && <Button onClick={() => openCategoryDrawer()}>+ Add Category</Button>}
+      {activeTab === "specifications" && <Button onClick={() => openSpecDrawer()}>+ Add Spec Field</Button>}
+      {activeTab === "blogs" && <Button onClick={() => openBlogDrawer()}>+ Add Post</Button>}
+      {activeTab === "faqs" && <Button onClick={() => openFaqDrawer()}>+ Add FAQ</Button>}
+    </>
+  );
+
+  const statCards = [
+    { label: "Products", value: products.length },
+    { label: "Categories", value: categories.length },
+    { label: "Articles", value: blogs.length },
+    { label: "Orders", value: orders.length, accent: "crimson" },
+    { label: "Inquiries", value: inquiries.length },
+  ];
+
+  // Shared Tailwind class strings for consistent tables across tabs
+  const tWrap = "overflow-x-auto";
+  const tbl = "w-full text-left text-sm";
+  const th = "px-5 py-3 text-[0.7rem] font-bold uppercase tracking-wide text-gray-500 whitespace-nowrap";
+  const td = "px-5 py-3 align-middle text-gray-600";
+  const tHead = "border-b border-line bg-sand";
+  const tRow = "border-b border-line transition-colors hover:bg-sand";
+  const fieldCls = "rounded border border-line bg-sand px-3 py-2 text-sm text-ink outline-none focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/20";
+  const statusTone = (s) => (s === "Active" ? "success" : s === "Draft" ? "warning" : "danger");
+
   return (
-    <div className={styles.adminContainer}>
-      
-      {/* ── SIDEBAR ── */}
-      <aside className={styles.sidebar}>
-        <div className={styles.logoArea}>
-          <h1 className={styles.logoText}>ëlla</h1>
-          <div className={styles.logoSub}>Admin Panel</div>
-        </div>
-
-        <nav>
-          <ul className={styles.menuList}>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "dashboard" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("dashboard")}
-              >
-                Dashboard
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "products" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("products")}
-              >
-                Products
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "categories" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("categories")}
-              >
-                Categories
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "specifications" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("specifications")}
-              >
-                Specifications
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "blogs" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("blogs")}
-              >
-                Blogs
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "faqs" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("faqs")}
-              >
-                FAQs
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "orders" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("orders")}
-              >
-                Orders ({orders.length})
-              </button>
-            </li>
-            <li className={styles.menuItem}>
-              <button
-                className={`${styles.menuBtn} ${activeTab === "inquiries" ? styles.activeMenu : ""}`}
-                onClick={() => setActiveTab("inquiries")}
-              >
-                Inquiries ({inquiries.length})
-              </button>
-            </li>
-          </ul>
-        </nav>
-
-        <a href={MAIN_SITE_URL} className={`${styles.menuBtn} ${styles.exitBtn}`}>
-          Exit Admin
-        </a>
-      </aside>
-
-      {/* ── MAIN CONTENT PANEL ── */}
-      <main className={styles.mainPanel}>
-        
-        {/* PANEL HEADER */}
-        <header className={styles.panelHeader}>
-          <div>
-            <h2 className={styles.panelTitle}>
-              {activeTab === "dashboard" && "Analytics Overview"}
-              {activeTab === "products" && "Product Catalog"}
-              {activeTab === "categories" && "Product Categories"}
-              {activeTab === "specifications" && "Specification Fields"}
-              {activeTab === "blogs" && "Journal & Articles"}
-              {activeTab === "faqs" && "Store FAQ Management"}
-              {activeTab === "orders" && "Order Management"}
-              {activeTab === "inquiries" && "Customer Inquiries"}
-            </h2>
-            <p className={styles.panelDesc}>
-              {activeTab === "dashboard" && "Performance metrics, system actions, and recent inquiries."}
-              {activeTab === "products" && "Manage listing parameters, auto SKU generation, and image gallery."}
-              {activeTab === "categories" && "Setup category tags, SKU prefixes, and sequence sorting."}
-              {activeTab === "specifications" && "Add, edit, or remove dynamic specification keys."}
-              {activeTab === "blogs" && "Publish press releases, style guides, and product announcements."}
-              {activeTab === "faqs" && "Update dynamic accordion contents for customer support."}
-              {activeTab === "orders" && "Update customer order statuses and fulfill orders."}
-              {activeTab === "inquiries" && "Review contact messages and pricing requests from the storefront."}
-            </p>
-          </div>
-
-          <div>
-            {activeTab === "dashboard" && (
-              <button 
-                className={styles.actionBtn}
-                onClick={handleDbInitialize}
-                disabled={isInitializing}
-              >
-                {isInitializing ? "Initializing..." : "Initialize Database Schema"}
-              </button>
-            )}
-            {activeTab === "products" && (
-              <button className={styles.actionBtn} onClick={() => openProductDrawer()}>
-                + Add Product
-              </button>
-            )}
-            {activeTab === "categories" && (
-              <button className={styles.actionBtn} onClick={() => openCategoryDrawer()}>
-                + Add Category
-              </button>
-            )}
-            {activeTab === "specifications" && (
-              <button className={styles.actionBtn} onClick={() => openSpecDrawer()}>
-                + Add Spec Field
-              </button>
-            )}
-            {activeTab === "blogs" && (
-              <button className={styles.actionBtn} onClick={() => openBlogDrawer()}>
-                + Add Post
-              </button>
-            )}
-            {activeTab === "faqs" && (
-              <button className={styles.actionBtn} onClick={() => openFaqDrawer()}>
-                + Add FAQ
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* ALERTS */}
-        {error && <div className={styles.error}>{error}</div>}
-        {success && <div className={styles.success}>{success}</div>}
+    <>
+      <AdminShell
+        navItems={navItems}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        title={tabTitles[activeTab]}
+        description={tabDescriptions[activeTab]}
+        actions={headerActions}
+        exitHref={MAIN_SITE_URL}
+      >
+        <ToastBridge error={error} success={success} />
 
         {loading ? (
-          <p style={{ fontStyle: "italic", color: "#707070" }}>Loading records from MySQL...</p>
+          <div className="py-20 text-center italic text-gray-400">Loading records…</div>
         ) : (
           <>
             {/* ── TAB: DASHBOARD ── */}
             {activeTab === "dashboard" && (
-              <div>
-                <section className={styles.statsGrid}>
-                  <div className={styles.statCard}>
-                    <div className={styles.statInfo}>
-                      <span className={styles.statVal}>{products.length}</span>
-                      <span className={styles.statLabel}>Products</span>
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statInfo}>
-                      <span className={styles.statVal}>{categories.length}</span>
-                      <span className={styles.statLabel}>Categories</span>
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statInfo}>
-                      <span className={styles.statVal}>{blogs.length}</span>
-                      <span className={styles.statLabel}>Articles</span>
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statInfo}>
-                      <span className={styles.statVal}>{orders.length}</span>
-                      <span className={styles.statLabel}>Orders</span>
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statInfo}>
-                      <span className={styles.statVal}>{inquiries.length}</span>
-                      <span className={styles.statLabel}>Inquiries</span>
-                    </div>
-                  </div>
+              <div className="space-y-6">
+                <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+                  {statCards.map((s) => (
+                    <StatCard
+                      key={s.label}
+                      label={s.label}
+                      value={s.value}
+                      accent={s.accent}
+                      icon={<span className="text-lg">◆</span>}
+                    />
+                  ))}
                 </section>
 
-                <div className={styles.contentCard}>
-                  <div className={styles.cardHeader}>
-                    <h3 className={styles.cardTitle}>Recent Contact Inquiries</h3>
-                  </div>
-                  <div className={styles.tableResponsive}>
-                    <table className={styles.table}>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <Card title="Sales Overview">
+                    <ChartPlaceholder type="bar" height={220} />
+                  </Card>
+                  <Card title="Traffic Trend">
+                    <ChartPlaceholder type="line" height={220} />
+                  </Card>
+                </div>
+
+                <Card title="Recent Contact Inquiries" bodyClassName="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
                       <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Email</th>
-                          <th>Phone</th>
-                          <th>Message</th>
-                          <th>Received At</th>
+                        <tr className="border-b border-line bg-sand text-[0.7rem] uppercase tracking-wide text-gray-500">
+                          <th className="px-5 py-3 font-bold">Name</th>
+                          <th className="px-5 py-3 font-bold">Email</th>
+                          <th className="px-5 py-3 font-bold">Phone</th>
+                          <th className="px-5 py-3 font-bold">Message</th>
+                          <th className="px-5 py-3 font-bold">Received</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {inquiries.slice(0, 5).map(inq => (
-                          <tr key={inq.id}>
-                            <td>{inq.name}</td>
-                            <td>{inq.email}</td>
-                            <td>{inq.phone || "—"}</td>
-                            <td>{inq.message}</td>
-                            <td>{new Date(inq.created_at).toLocaleString()}</td>
+                        {inquiries.slice(0, 5).map((inq) => (
+                          <tr key={inq.id} className="border-b border-line transition-colors hover:bg-sand">
+                            <td className="px-5 py-3 font-medium text-ink">{inq.name}</td>
+                            <td className="px-5 py-3 text-gray-600">{inq.email}</td>
+                            <td className="px-5 py-3 text-gray-600">{inq.phone || "—"}</td>
+                            <td className="px-5 py-3 text-gray-600">{inq.message}</td>
+                            <td className="whitespace-nowrap px-5 py-3 text-gray-500">{new Date(inq.created_at).toLocaleString()}</td>
                           </tr>
                         ))}
                         {inquiries.length === 0 && (
                           <tr>
-                            <td colSpan="5" style={{ textAlign: "center", fontStyle: "italic" }}>
+                            <td colSpan="5" className="px-5 py-10 text-center italic text-gray-400">
                               No messages received.
                             </td>
                           </tr>
@@ -1001,38 +923,35 @@ export default function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </Card>
               </div>
             )}
 
             {/* ── TAB: PRODUCTS ── */}
             {activeTab === "products" && (
-              <div className={styles.contentCard}>
-                <div style={{ display: "flex", gap: "15px", marginBottom: "20px", flexWrap: "wrap" }}>
+              <Card bodyClassName="p-0">
+                <div className="flex flex-wrap gap-3 p-4 sm:p-5">
                   <input
                     type="text"
-                    placeholder="Search by name or SKU..."
+                    placeholder="Search by name or SKU…"
                     value={prodSearch}
                     onChange={(e) => setProdSearch(e.target.value)}
-                    className={styles.input}
-                    style={{ maxWidth: "300px" }}
+                    className={`${fieldCls} w-full sm:max-w-xs`}
                   />
                   <select
                     value={prodCatFilter}
                     onChange={(e) => setProdCatFilter(e.target.value)}
-                    className={styles.input}
-                    style={{ maxWidth: "200px" }}
+                    className={`${fieldCls} cursor-pointer`}
                   >
                     <option value="all">All Categories</option>
-                    {categories.map(c => (
+                    {categories.map((c) => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>
                   <select
                     value={prodStatusFilter}
                     onChange={(e) => setProdStatusFilter(e.target.value)}
-                    className={styles.input}
-                    style={{ maxWidth: "150px" }}
+                    className={`${fieldCls} cursor-pointer`}
                   >
                     <option value="all">All Status</option>
                     <option value="Active">Active</option>
@@ -1041,62 +960,47 @@ export default function AdminDashboard() {
                   </select>
                 </div>
 
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+                <div className={`${tWrap} border-t border-line`}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>Image</th>
-                        <th>SKU</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Order</th>
-                        <th>Actions</th>
+                      <tr className={tHead}>
+                        <th className={th}>Image</th>
+                        <th className={th}>SKU</th>
+                        <th className={th}>Name</th>
+                        <th className={th}>Category</th>
+                        <th className={th}>Price</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Order</th>
+                        <th className={th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredProducts.map(p => (
-                        <tr key={p.id}>
-                          <td>
-                            <div className={styles.tableImg}>
+                      {filteredProducts.map((p) => (
+                        <tr key={p.id} className={tRow}>
+                          <td className={td}>
+                            <div className="size-11 overflow-hidden rounded border border-line bg-sand">
                               {p.images && p.images[0] && (
-                                <img
-                                  src={p.images[0]}
-                                  alt={p.name}
-                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                />
+                                <img src={p.images[0]} alt={p.name} className="size-full object-cover" />
                               )}
                             </div>
                           </td>
-                          <td style={{ fontWeight: "600" }}>{p.sku}</td>
-                          <td>{p.name}</td>
-                          <td>{p.category}</td>
-                          <td>₹{p.price}</td>
-                          <td>
-                            <span className={`${styles.badge} ${
-                              p.status === "Active" ? styles.badgeSuccess : 
-                              p.status === "Draft" ? styles.badgeWarning : styles.badgeDanger
-                            }`}>
-                              {p.status}
-                            </span>
-                          </td>
-                          <td>{p.display_order}</td>
-                          <td>
-                            <div className={styles.btnGroup}>
-                              <button className={styles.editBtn} onClick={() => openProductDrawer(p)}>
-                                Edit
-                              </button>
-                              <button className={styles.deleteBtn} onClick={() => handleProductDelete(p.slug)}>
-                                Delete
-                              </button>
+                          <td className={`${td} font-semibold text-ink`}>{p.sku}</td>
+                          <td className={`${td} text-ink`}>{p.name}</td>
+                          <td className={td}>{p.category}</td>
+                          <td className={`${td} font-medium text-ink`}>₹{p.price}</td>
+                          <td className={td}><Badge tone={statusTone(p.status)}>{p.status}</Badge></td>
+                          <td className={td}>{p.display_order}</td>
+                          <td className={td}>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => openProductDrawer(p)}>Edit</Button>
+                              <Button variant="danger" size="sm" onClick={() => handleProductDelete(p.slug)}>Delete</Button>
                             </div>
                           </td>
                         </tr>
                       ))}
                       {filteredProducts.length === 0 && (
                         <tr>
-                          <td colSpan="8" style={{ textAlign: "center", fontStyle: "italic" }}>
+                          <td colSpan="8" className="px-5 py-10 text-center italic text-gray-400">
                             No products matching filters.
                           </td>
                         </tr>
@@ -1104,60 +1008,46 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── TAB: CATEGORIES ── */}
             {activeTab === "categories" && (
-              <div className={styles.contentCard}>
-                <p style={{ fontSize: "0.85rem", color: "#707070", marginBottom: "15px" }}>
-                  💡 Use Up/Down buttons to sort categories. Reordering will immediately sync and control the website categories layout.
+              <Card bodyClassName="p-0">
+                <p className="px-5 py-4 text-sm text-gray-500">
+                  💡 Use the ▲ / ▼ buttons to sort categories. Reordering syncs immediately and controls the website category layout.
                 </p>
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+                <div className={`${tWrap} border-t border-line`}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Category Name</th>
-                        <th>SKU Prefix</th>
-                        <th>Display Order</th>
-                        <th>Reorder</th>
-                        <th>Actions</th>
+                      <tr className={tHead}>
+                        <th className={th}>ID</th>
+                        <th className={th}>Category Name</th>
+                        <th className={th}>SKU Prefix</th>
+                        <th className={th}>Gender</th>
+                        <th className={th}>Display Order</th>
+                        <th className={th}>Reorder</th>
+                        <th className={th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {categories.map((cat, index) => (
-                        <tr key={cat.id}>
-                          <td>{cat.id}</td>
-                          <td style={{ fontWeight: "600" }}>{cat.name}</td>
-                          <td><code>{cat.sku_prefix}</code></td>
-                          <td>{cat.display_order}</td>
-                          <td>
-                            <div className={styles.btnGroup}>
-                              <button 
-                                className={styles.editBtn} 
-                                disabled={index === 0} 
-                                onClick={() => handleCategoryReorder("up", index)}
-                              >
-                                ▲
-                              </button>
-                              <button 
-                                className={styles.editBtn} 
-                                disabled={index === categories.length - 1} 
-                                onClick={() => handleCategoryReorder("down", index)}
-                              >
-                                ▼
-                              </button>
+                        <tr key={cat.id} className={tRow}>
+                          <td className={td}>{cat.id}</td>
+                          <td className={`${td} font-semibold text-ink`}>{cat.name}</td>
+                          <td className={td}><code className="rounded bg-sand px-1.5 py-0.5 text-xs">{cat.sku_prefix}</code></td>
+                          <td className={td}>{Array.isArray(cat.genders) && cat.genders.length > 0 ? cat.genders.join(", ") : "—"}</td>
+                          <td className={td}>{cat.display_order}</td>
+                          <td className={td}>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" disabled={index === 0} onClick={() => handleCategoryReorder("up", index)}>▲</Button>
+                              <Button variant="outline" size="sm" disabled={index === categories.length - 1} onClick={() => handleCategoryReorder("down", index)}>▼</Button>
                             </div>
                           </td>
-                          <td>
-                            <div className={styles.btnGroup}>
-                              <button className={styles.editBtn} onClick={() => openCategoryDrawer(cat)}>
-                                Edit
-                              </button>
-                              <button className={styles.deleteBtn} onClick={() => handleCategoryDelete(cat.id)}>
-                                Delete
-                              </button>
+                          <td className={td}>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => openCategoryDrawer(cat)}>Edit</Button>
+                              <Button variant="danger" size="sm" onClick={() => handleCategoryDelete(cat.id)}>Delete</Button>
                             </div>
                           </td>
                         </tr>
@@ -1165,36 +1055,32 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── TAB: SPECIFICATIONS ── */}
             {activeTab === "specifications" && (
-              <div className={styles.contentCard}>
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+              <Card bodyClassName="p-0">
+                <div className={tWrap}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Specification Key</th>
-                        <th>Display Order</th>
-                        <th>Actions</th>
+                      <tr className={tHead}>
+                        <th className={th}>ID</th>
+                        <th className={th}>Specification Key</th>
+                        <th className={th}>Display Order</th>
+                        <th className={th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {specFields.map(field => (
-                        <tr key={field.id}>
-                          <td>{field.id}</td>
-                          <td style={{ fontWeight: "600" }}>{field.name}</td>
-                          <td>{field.display_order}</td>
-                          <td>
-                            <div className={styles.btnGroup}>
-                              <button className={styles.editBtn} onClick={() => openSpecDrawer(field)}>
-                                Edit
-                              </button>
-                              <button className={styles.deleteBtn} onClick={() => handleSpecDelete(field.id)}>
-                                Delete
-                              </button>
+                      {specFields.map((field) => (
+                        <tr key={field.id} className={tRow}>
+                          <td className={td}>{field.id}</td>
+                          <td className={`${td} font-semibold text-ink`}>{field.name}</td>
+                          <td className={td}>{field.display_order}</td>
+                          <td className={td}>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => openSpecDrawer(field)}>Edit</Button>
+                              <Button variant="danger" size="sm" onClick={() => handleSpecDelete(field.id)}>Delete</Button>
                             </div>
                           </td>
                         </tr>
@@ -1202,142 +1088,129 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── TAB: BLOGS ── */}
             {activeTab === "blogs" && (
-              <div className={styles.contentCard}>
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+              <Card bodyClassName="p-0">
+                <div className={tWrap}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>Cover</th>
-                        <th>Title</th>
-                        <th>Slug</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                      <tr className={tHead}>
+                        <th className={th}>Cover</th>
+                        <th className={th}>Title</th>
+                        <th className={th}>Slug</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {blogs.map(b => (
-                        <tr key={b.id}>
-                          <td>
-                            <div className={styles.tableImg}>
+                      {blogs.map((b) => (
+                        <tr key={b.id} className={tRow}>
+                          <td className={td}>
+                            <div className="h-11 w-16 overflow-hidden rounded border border-line bg-sand">
                               {b.coverImage && (
-                                <img
-                                  src={b.coverImage}
-                                  alt={b.title}
-                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                />
+                                <img src={b.coverImage} alt={b.title} className="size-full object-cover" />
                               )}
                             </div>
                           </td>
-                          <td style={{ fontWeight: "600" }}>{b.title}</td>
-                          <td>{b.slug}</td>
-                          <td>
-                            <span className={`${styles.badge} ${b.status === "Active" ? styles.badgeSuccess : styles.badgeWarning}`}>
-                              {b.status}
-                            </span>
-                          </td>
-                          <td>
-                            <div className={styles.btnGroup}>
-                              <button className={styles.editBtn} onClick={() => openBlogDrawer(b)}>
-                                Edit
-                              </button>
-                              <button className={styles.deleteBtn} onClick={() => handleBlogDelete(b.slug)}>
-                                Delete
-                              </button>
+                          <td className={`${td} font-semibold text-ink`}>{b.title}</td>
+                          <td className={td}>{b.slug}</td>
+                          <td className={td}><Badge tone={b.status === "Active" ? "success" : "warning"}>{b.status}</Badge></td>
+                          <td className={td}>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => openBlogDrawer(b)}>Edit</Button>
+                              <Button variant="danger" size="sm" onClick={() => handleBlogDelete(b.slug)}>Delete</Button>
                             </div>
                           </td>
                         </tr>
                       ))}
+                      {blogs.length === 0 && (
+                        <tr><td colSpan="5" className="px-5 py-10 text-center italic text-gray-400">No articles yet.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── TAB: FAQS ── */}
             {activeTab === "faqs" && (
-              <div className={styles.contentCard}>
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+              <Card bodyClassName="p-0">
+                <div className={tWrap}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Question</th>
-                        <th>Answer</th>
-                        <th>Order</th>
-                        <th>Actions</th>
+                      <tr className={tHead}>
+                        <th className={th}>ID</th>
+                        <th className={th}>Question</th>
+                        <th className={th}>Answer</th>
+                        <th className={th}>Order</th>
+                        <th className={th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {faqs.map(faq => (
-                        <tr key={faq.id}>
-                          <td>{faq.id}</td>
-                          <td style={{ fontWeight: "600" }}>{faq.question}</td>
-                          <td>{faq.answer.substring(0, 100)}...</td>
-                          <td>{faq.display_order}</td>
-                          <td>
-                            <div className={styles.btnGroup}>
-                              <button className={styles.editBtn} onClick={() => openFaqDrawer(faq)}>
-                                Edit
-                              </button>
-                              <button className={styles.deleteBtn} onClick={() => handleFaqDelete(faq.id)}>
-                                Delete
-                              </button>
+                      {faqs.map((faq) => (
+                        <tr key={faq.id} className={tRow}>
+                          <td className={td}>{faq.id}</td>
+                          <td className={`${td} font-semibold text-ink`}>{faq.question}</td>
+                          <td className={td}>{faq.answer.substring(0, 100)}…</td>
+                          <td className={td}>{faq.display_order}</td>
+                          <td className={td}>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => openFaqDrawer(faq)}>Edit</Button>
+                              <Button variant="danger" size="sm" onClick={() => handleFaqDelete(faq.id)}>Delete</Button>
                             </div>
                           </td>
                         </tr>
                       ))}
+                      {faqs.length === 0 && (
+                        <tr><td colSpan="5" className="px-5 py-10 text-center italic text-gray-400">No FAQs yet.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── TAB: ORDERS ── */}
             {activeTab === "orders" && (
-              <div className={styles.contentCard}>
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+              <Card bodyClassName="p-0">
+                <div className={tWrap}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>Order #</th>
-                        <th>Customer</th>
-                        <th>Contact / Email</th>
-                        <th>Address</th>
-                        <th>Amount</th>
-                        <th>Items</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                      <tr className={tHead}>
+                        <th className={th}>Order #</th>
+                        <th className={th}>Customer</th>
+                        <th className={th}>Contact / Email</th>
+                        <th className={th}>Address</th>
+                        <th className={th}>Amount</th>
+                        <th className={th}>Items</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map(ord => (
-                        <tr key={ord.id}>
-                          <td style={{ fontWeight: "600" }}>{ord.order_number}</td>
-                          <td style={{ fontWeight: "500" }}>{ord.name}</td>
-                          <td>
+                      {orders.map((ord) => (
+                        <tr key={ord.id} className={tRow}>
+                          <td className={`${td} font-semibold text-ink`}>{ord.order_number}</td>
+                          <td className={`${td} font-medium text-ink`}>{ord.name}</td>
+                          <td className={td}>
                             <div>{ord.phone}</div>
-                            <div style={{ fontSize: "0.8rem", color: "#666" }}>{ord.email}</div>
+                            <div className="text-xs text-gray-400">{ord.email}</div>
                           </td>
-                          <td style={{ maxWidth: "180px", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>{ord.address}</td>
-                          <td style={{ fontWeight: "600" }}>₹{parseFloat(ord.total_amount).toFixed(2)}</td>
-                          <td style={{ fontSize: "0.85rem" }}>
+                          <td className={`${td} max-w-[180px] whitespace-pre-wrap text-xs`}>{ord.address}</td>
+                          <td className={`${td} font-semibold text-ink`}>₹{parseFloat(ord.total_amount).toFixed(2)}</td>
+                          <td className={`${td} text-xs`}>
                             {Array.isArray(ord.items) ? ord.items.map((it, idx) => (
-                              <div key={idx}>
-                                • {it.name} x {it.quantity} ({it.metal} / Size: {it.size})
-                              </div>
+                              <div key={idx}>• {it.name} x {it.quantity} ({it.metal} / Size: {it.size})</div>
                             )) : "—"}
                           </td>
-                          <td>
+                          <td className={td}>
                             <select
                               value={ord.status}
                               onChange={(e) => handleOrderStatusUpdate(ord.order_number, e.target.value)}
-                              className={styles.input}
-                              style={{ padding: "4px 8px", fontSize: "0.85rem", minWidth: "120px" }}
+                              className={`${fieldCls} min-w-[120px] cursor-pointer`}
                             >
                               <option value="Pending">Pending</option>
                               <option value="Processing">Processing</option>
@@ -1346,76 +1219,58 @@ export default function AdminDashboard() {
                               <option value="Cancelled">Cancelled</option>
                             </select>
                           </td>
-                          <td>
-                            <button className={styles.deleteBtn} onClick={() => handleOrderDelete(ord.order_number)}>
-                              Delete
-                            </button>
+                          <td className={td}>
+                            <Button variant="danger" size="sm" onClick={() => handleOrderDelete(ord.order_number)}>Delete</Button>
                           </td>
                         </tr>
                       ))}
                       {orders.length === 0 && (
-                        <tr>
-                          <td colSpan="8" style={{ textAlign: "center", fontStyle: "italic" }}>
-                            No orders found.
-                          </td>
-                        </tr>
+                        <tr><td colSpan="8" className="px-5 py-10 text-center italic text-gray-400">No orders found.</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── TAB: INQUIRIES ── */}
             {activeTab === "inquiries" && (
-              <div className={styles.contentCard}>
-                <div className={styles.tableResponsive}>
-                  <table className={styles.table}>
+              <Card bodyClassName="p-0">
+                <div className={tWrap}>
+                  <table className={tbl}>
                     <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Message</th>
-                        <th>Received At</th>
+                      <tr className={tHead}>
+                        <th className={th}>Name</th>
+                        <th className={th}>Email</th>
+                        <th className={th}>Phone</th>
+                        <th className={th}>Message</th>
+                        <th className={th}>Received At</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {inquiries.map(inq => (
-                        <tr key={inq.id}>
-                          <td style={{ fontWeight: "600" }}>{inq.name}</td>
-                          <td><a href={`mailto:${inq.email}`}>{inq.email}</a></td>
-                          <td>{inq.phone ? <a href={`tel:${inq.phone}`}>{inq.phone}</a> : "—"}</td>
-                          <td>{inq.message}</td>
-                          <td>{new Date(inq.created_at).toLocaleString()}</td>
+                      {inquiries.map((inq) => (
+                        <tr key={inq.id} className={tRow}>
+                          <td className={`${td} font-semibold text-ink`}>{inq.name}</td>
+                          <td className={td}><a className="text-crimson hover:underline" href={`mailto:${inq.email}`}>{inq.email}</a></td>
+                          <td className={td}>{inq.phone ? <a className="text-crimson hover:underline" href={`tel:${inq.phone}`}>{inq.phone}</a> : "—"}</td>
+                          <td className={td}>{inq.message}</td>
+                          <td className={`${td} whitespace-nowrap`}>{new Date(inq.created_at).toLocaleString()}</td>
                         </tr>
                       ))}
                       {inquiries.length === 0 && (
-                        <tr>
-                          <td colSpan="5" style={{ textAlign: "center", fontStyle: "italic" }}>
-                            No inquiries.
-                          </td>
-                        </tr>
+                        <tr><td colSpan="5" className="px-5 py-10 text-center italic text-gray-400">No inquiries.</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
           </>
         )}
-
-      </main>
+      </AdminShell>
 
       {/* ── PRODUCT DRAWERS / MODALS ── */}
-      {isProductDrawerOpen && (
-        <div className={styles.drawerOverlay} onClick={() => setIsProductDrawerOpen(false)}>
-          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
-            <header className={styles.drawerHeader}>
-              <h3 className={styles.drawerTitle}>{editingProduct ? "Edit Product" : "Add New Product"}</h3>
-              <button className={styles.closeBtn} onClick={() => setIsProductDrawerOpen(false)}>×</button>
-            </header>
-            
+      <Modal open={isProductDrawerOpen} onClose={() => setIsProductDrawerOpen(false)} title={editingProduct ? "Edit Product" : "Add New Product"} size="lg">
             <form onSubmit={handleProductSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Product Name *</label>
@@ -1433,24 +1288,39 @@ export default function AdminDashboard() {
                   <label className={styles.label}>Category *</label>
                   <select
                     required
-                    value={formProdCatId}
-                    onChange={(e) => setFormProdCatId(e.target.value)}
+                    value={formProdGender}
+                    onChange={(e) => {
+                      const g = e.target.value;
+                      setFormProdGender(g);
+                      // Clear sub-category if it no longer belongs to the chosen gender
+                      const stillValid = categories.some(
+                        (c) => String(c.id) === String(formProdCatId) && Array.isArray(c.genders) && c.genders.includes(g)
+                      );
+                      if (!stillValid) setFormProdCatId("");
+                    }}
                     className={styles.input}
                   >
                     <option value="">Select Category</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
+                    <option value="Men">Men</option>
+                    <option value="Women">Women</option>
                   </select>
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Subcategory</label>
-                  <input
-                    type="text"
-                    value={formProdSubcat}
-                    onChange={(e) => setFormProdSubcat(e.target.value)}
+                  <label className={styles.label}>Sub-category *</label>
+                  <select
+                    required
+                    value={formProdCatId}
+                    onChange={(e) => setFormProdCatId(e.target.value)}
                     className={styles.input}
-                  />
+                    disabled={!formProdGender}
+                  >
+                    <option value="">{formProdGender ? "Select Sub-category" : "Select Category first"}</option>
+                    {categories
+                      .filter((c) => Array.isArray(c.genders) && c.genders.includes(formProdGender))
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                  </select>
                 </div>
               </div>
 
@@ -1571,14 +1441,6 @@ export default function AdminDashboard() {
               </div>
 
               <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Gender</label>
-                  <select value={formProdGender} onChange={(e) => setFormProdGender(e.target.value)} className={styles.input}>
-                    <option value="Women">Women</option>
-                    <option value="Men">Men</option>
-                    <option value="Unisex">Unisex</option>
-                  </select>
-                </div>
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Availability</label>
                   <input type="text" value={formProdAvailability} onChange={(e) => setFormProdAvailability(e.target.value)} className={styles.input} />
@@ -1750,18 +1612,10 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* ── CATEGORY DRAWER ── */}
-      {isCatDrawerOpen && (
-        <div className={styles.drawerOverlay} onClick={() => setIsCatDrawerOpen(false)}>
-          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
-            <header className={styles.drawerHeader}>
-              <h3 className={styles.drawerTitle}>{editingCategory ? "Edit Category" : "Add Category"}</h3>
-              <button className={styles.closeBtn} onClick={() => setIsCatDrawerOpen(false)}>×</button>
-            </header>
+      <Modal open={isCatDrawerOpen} onClose={() => setIsCatDrawerOpen(false)} title={editingCategory ? "Edit Category" : "Add Category"}>
             <form onSubmit={handleCategorySubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Category Name *</label>
@@ -1793,6 +1647,27 @@ export default function AdminDashboard() {
                   className={styles.input}
                 />
               </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Gender Groups</label>
+                <div style={{ display: "flex", gap: "20px", marginTop: "6px" }}>
+                  {["Men", "Women"].map((g) => (
+                    <label key={g} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "0.9rem" }}>
+                      <input
+                        type="checkbox"
+                        checked={formCatGenders.includes(g)}
+                        onChange={(e) =>
+                          setFormCatGenders(
+                            e.target.checked
+                              ? [...formCatGenders, g]
+                              : formCatGenders.filter((x) => x !== g)
+                          )
+                        }
+                      />
+                      {g}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className={styles.formActions}>
                 <button type="submit" className={styles.submitBtn}>
                   {editingCategory ? "Save" : "Add"}
@@ -1802,18 +1677,10 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* ── SPECIFICATION DRAWER ── */}
-      {isSpecDrawerOpen && (
-        <div className={styles.drawerOverlay} onClick={() => setIsSpecDrawerOpen(false)}>
-          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
-            <header className={styles.drawerHeader}>
-              <h3 className={styles.drawerTitle}>{editingSpecField ? "Edit Spec Field" : "Add Spec Field"}</h3>
-              <button className={styles.closeBtn} onClick={() => setIsSpecDrawerOpen(false)}>×</button>
-            </header>
+      <Modal open={isSpecDrawerOpen} onClose={() => setIsSpecDrawerOpen(false)} title={editingSpecField ? "Edit Spec Field" : "Add Spec Field"}>
             <form onSubmit={handleSpecSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Spec Field Name * (e.g. Setting Type, Clarity)</label>
@@ -1843,18 +1710,10 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* ── BLOG DRAWER ── */}
-      {isBlogDrawerOpen && (
-        <div className={styles.drawerOverlay} onClick={() => setIsBlogDrawerOpen(false)}>
-          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
-            <header className={styles.drawerHeader}>
-              <h3 className={styles.drawerTitle}>{editingBlog ? "Edit Blog Post" : "Add Blog Post"}</h3>
-              <button className={styles.closeBtn} onClick={() => setIsBlogDrawerOpen(false)}>×</button>
-            </header>
+      <Modal open={isBlogDrawerOpen} onClose={() => setIsBlogDrawerOpen(false)} title={editingBlog ? "Edit Blog Post" : "Add Blog Post"} size="lg">
             <form onSubmit={handleBlogSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Post Title *</label>
@@ -1890,18 +1749,10 @@ export default function AdminDashboard() {
                 <button type="button" className={styles.cancelBtn} onClick={() => setIsBlogDrawerOpen(false)}>Cancel</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* ── FAQ DRAWER ── */}
-      {isFaqDrawerOpen && (
-        <div className={styles.drawerOverlay} onClick={() => setIsFaqDrawerOpen(false)}>
-          <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
-            <header className={styles.drawerHeader}>
-              <h3 className={styles.drawerTitle}>{editingFaq ? "Edit FAQ" : "Add FAQ"}</h3>
-              <button className={styles.closeBtn} onClick={() => setIsFaqDrawerOpen(false)}>×</button>
-            </header>
+      <Modal open={isFaqDrawerOpen} onClose={() => setIsFaqDrawerOpen(false)} title={editingFaq ? "Edit FAQ" : "Add FAQ"}>
             <form onSubmit={handleFaqSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Question *</label>
@@ -1920,10 +1771,7 @@ export default function AdminDashboard() {
                 <button type="button" className={styles.cancelBtn} onClick={() => setIsFaqDrawerOpen(false)}>Cancel</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-    </div>
+      </Modal>
+    </>
   );
 }

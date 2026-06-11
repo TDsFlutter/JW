@@ -1,6 +1,7 @@
 import { Lato, Montserrat_Alternates, Libre_Baskerville, Corben } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const lato = Lato({
   variable: "--font-lato",
@@ -52,7 +53,9 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
       >
         <AuthProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

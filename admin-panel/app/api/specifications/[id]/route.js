@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -21,6 +21,7 @@ export async function PUT(req, { params }) {
     }
 
     const { id } = await params;
+    const fieldId = parseInt(id, 10);
     const { name, display_order } = await req.json();
 
     if (!name) {
@@ -29,15 +30,15 @@ export async function PUT(req, { params }) {
 
     const cleanName = name.trim();
 
-    // Check unique name excluding current field
-    const existing = await query('SELECT id FROM specification_fields WHERE name = ? AND id != ?', [cleanName, id]);
-    if (existing.length > 0) {
+    const db = await getDb();
+    const existing = await db.collection('specification_fields').findOne({ name: cleanName, id: { $ne: fieldId } });
+    if (existing) {
       return NextResponse.json({ error: 'Field name must be unique' }, { status: 400, headers: corsHeaders });
     }
 
-    await query(
-      'UPDATE specification_fields SET name = ?, display_order = ? WHERE id = ?',
-      [cleanName, display_order || 0, id]
+    await db.collection('specification_fields').updateOne(
+      { id: fieldId },
+      { $set: { name: cleanName, display_order: display_order || 0 } }
     );
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
@@ -56,9 +57,8 @@ export async function DELETE(req, { params }) {
     }
 
     const { id } = await params;
-
-    // Delete field
-    await query('DELETE FROM specification_fields WHERE id = ?', [id]);
+    const db = await getDb();
+    await db.collection('specification_fields').deleteOne({ id: parseInt(id, 10) });
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
 

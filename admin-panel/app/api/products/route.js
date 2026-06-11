@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb, getNextId } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -12,113 +12,83 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function enrich(p) {
+  const { _id, ...rest } = p;
+  return {
+    ...rest,
+    price: p.base_price,
+    originalPrice: p.sale_price,
+    images: Array.isArray(p.images) ? p.images : [],
+    specs: Array.isArray(p.specs) ? p.specs.map((s) => ({ label: s.name, value: s.value })) : [],
+    category: p.category_name,
+  };
+}
+
 // GET products (with filters, search, sorting)
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
-    const status = searchParams.get('status') || 'Active'; // Active by default for storefront
+    const status = searchParams.get('status') || 'Active';
     const metalType = searchParams.get('metal_type') || '';
     const stoneType = searchParams.get('stone_type') || '';
     const collection = searchParams.get('collection') || '';
     const gender = searchParams.get('gender') || '';
-    const sortBy = searchParams.get('sort_by') || 'display_order'; // default display_order
+    const sortBy = searchParams.get('sort_by') || 'display_order';
 
-    let sql = `
-      SELECT p.*, c.name as category_name, c.sku_prefix
-      FROM products p
-      JOIN categories c ON p.category_id = c.id
-      WHERE 1=1
-    `;
-    const params = [];
+    const db = await getDb();
 
-    // Filter by status (unless 'all' is passed and it's authenticated - we can check query param)
-    if (status && status !== 'all') {
-      sql += ' AND p.status = ?';
-      params.push(status);
-    }
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: 'id',
+          as: '_cat',
+        },
+      },
+      {
+        $addFields: {
+          category_name: { $arrayElemAt: ['$_cat.name', 0] },
+          sku_prefix: { $arrayElemAt: ['$_cat.sku_prefix', 0] },
+        },
+      },
+      { $project: { _cat: 0 } },
+    ];
 
-    // Search by name or SKU
+    const match = {};
+    if (status && status !== 'all') match.status = status;
     if (search) {
-      sql += ' AND (p.name LIKE ? OR p.sku LIKE ? OR p.description LIKE ?)';
-      const term = `%${search}%`;
-      params.push(term, term, term);
+      const term = new RegExp(escapeRegex(search), 'i');
+      match.$or = [{ name: term }, { sku: term }, { description: term }];
     }
-
-    // Filter by category (ID or Name)
     if (category) {
-      if (isNaN(category)) {
-        sql += ' AND c.name = ?';
-        params.push(category);
-      } else {
-        sql += ' AND p.category_id = ?';
-        params.push(parseInt(category, 10));
-      }
+      if (isNaN(category)) match.category_name = category;
+      else match.category_id = parseInt(category, 10);
     }
+    if (metalType) match.metal_type = metalType;
+    if (stoneType) match.stone_type = stoneType;
+    if (collection) match.collection = collection;
+    if (gender) match.gender = gender;
+    if (Object.keys(match).length > 0) pipeline.push({ $match: match });
 
-    // Other filters
-    if (metalType) {
-      sql += ' AND p.metal_type = ?';
-      params.push(metalType);
-    }
-    if (stoneType) {
-      sql += ' AND p.stone_type = ?';
-      params.push(stoneType);
-    }
-    if (collection) {
-      sql += ' AND p.collection = ?';
-      params.push(collection);
-    }
-    if (gender) {
-      sql += ' AND p.gender = ?';
-      params.push(gender);
-    }
+    const sortMap = {
+      newest: { created_at: -1 },
+      oldest: { created_at: 1 },
+      'price-low': { base_price: 1 },
+      'price-high': { base_price: -1 },
+      'alphabetical-asc': { name: 1 },
+      'alphabetical-desc': { name: -1 },
+    };
+    pipeline.push({ $sort: sortMap[sortBy] || { display_order: 1, id: -1 } });
 
-    // Sorting
-    if (sortBy === 'newest') {
-      sql += ' ORDER BY p.created_at DESC';
-    } else if (sortBy === 'oldest') {
-      sql += ' ORDER BY p.created_at ASC';
-    } else if (sortBy === 'price-low') {
-      sql += ' ORDER BY p.base_price ASC';
-    } else if (sortBy === 'price-high') {
-      sql += ' ORDER BY p.base_price DESC';
-    } else if (sortBy === 'alphabetical-asc') {
-      sql += ' ORDER BY p.name ASC';
-    } else if (sortBy === 'alphabetical-desc') {
-      sql += ' ORDER BY p.name DESC';
-    } else {
-      sql += ' ORDER BY p.display_order ASC, p.id DESC';
-    }
-
-    // Execute query
-    const products = await query(sql, params);
-
-    // Fetch images and specifications for each product
-    const enrichedProducts = [];
-    for (const p of products) {
-      const images = await query(
-        'SELECT image_url, display_order FROM product_images WHERE product_id = ? ORDER BY display_order ASC',
-        [p.id]
-      );
-      
-      const specifications = await query(
-        'SELECT name, value FROM product_specifications WHERE product_id = ?',
-        [p.id]
-      );
-
-      enrichedProducts.push({
-        ...p,
-        price: p.base_price, // map base_price to price for frontend compatibility
-        originalPrice: p.sale_price, // map sale_price to originalPrice
-        images: images.map(img => img.image_url),
-        specs: specifications.map(spec => ({ label: spec.name, value: spec.value })),
-        category: p.category_name, // compat check
-      });
-    }
-
-    return NextResponse.json(enrichedProducts, { headers: corsHeaders });
+    const products = await db.collection('products').aggregate(pipeline).toArray();
+    return NextResponse.json(products.map(enrich), { headers: corsHeaders });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
@@ -135,147 +105,98 @@ export async function POST(req) {
 
     const data = await req.json();
     const {
-      name,
-      slug,
-      short_description,
-      description,
-      category_id,
-      subcategory,
-      metal_type,
-      metal_color,
-      purity,
-      stone_type,
-      stone_shape,
-      cut_grade,
-      style,
-      collection,
-      base_price,
-      sale_price,
-      status,
-      display_order,
-      gender,
-      availability,
-      video_url,
-      images, // array of strings
-      specs   // array of { name, value }
+      name, slug, short_description, description, category_id, subcategory,
+      metal_type, metal_color, purity, stone_type, stone_shape, cut_grade,
+      style, collection, base_price, sale_price, status, display_order,
+      gender, availability, video_url, images, specs,
     } = data;
 
     if (!name || !category_id || !base_price) {
       return NextResponse.json({ error: 'Name, Category, and Base Price are required' }, { status: 400, headers: corsHeaders });
     }
 
-    // Get category info (for prefix)
-    const categoryInfo = await query('SELECT sku_prefix FROM categories WHERE id = ?', [category_id]);
-    if (categoryInfo.length === 0) {
+    const db = await getDb();
+    const catId = parseInt(category_id, 10);
+    const category = await db.collection('categories').findOne({ id: catId });
+    if (!category) {
       return NextResponse.json({ error: 'Invalid category selection' }, { status: 400, headers: corsHeaders });
     }
-    const prefix = categoryInfo[0].sku_prefix;
+    const prefix = category.sku_prefix;
 
-    // ── SKU Generation (Sequence based on category) ─────────────────────────
-    // Get the maximum sequential number currently in the database for this prefix
-    const rows = await query(
-      "SELECT sku FROM products WHERE sku LIKE ? ORDER BY sku DESC LIMIT 1",
-      [`${prefix}-%`]
-    );
+    // SKU generation (sequence based on category prefix)
+    const lastSkuDoc = await db.collection('products')
+      .find({ sku: new RegExp('^' + escapeRegex(prefix) + '-') })
+      .sort({ sku: -1 })
+      .limit(1)
+      .toArray();
     let nextNum = 1;
-    if (rows && rows.length > 0) {
-      const lastSku = rows[0].sku;
-      const parts = lastSku.split('-');
-      const num = parseInt(parts[1], 10);
-      if (!isNaN(num)) {
-        nextNum = num + 1;
-      }
+    if (lastSkuDoc.length > 0) {
+      const num = parseInt(lastSkuDoc[0].sku.split('-')[1], 10);
+      if (!isNaN(num)) nextNum = num + 1;
     }
     const sku = `${prefix}-${String(nextNum).padStart(4, '0')}`;
 
-    // Auto-generate slug if not provided or empty
-    const cleanSlug = (slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) + '-' + Date.now().toString(36).substr(-4);
+    const cleanSlug =
+      (slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) +
+      '-' + Date.now().toString(36).substr(-4);
 
-    // Insert Product into MySQL
-    const result = await query(
-      `INSERT INTO products (
-        name, sku, slug, short_description, description, category_id, subcategory,
-        metal_type, metal_color, purity, stone_type, stone_shape, cut_grade,
-        style, collection, base_price, sale_price, status, display_order, gender, availability, video_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name.trim(),
-        sku,
-        cleanSlug,
-        short_description || '',
-        description || '',
-        parseInt(category_id, 10),
-        subcategory || '',
-        metal_type || '',
-        metal_color || '',
-        purity || '',
-        stone_type || '',
-        stone_shape || '',
-        cut_grade || '',
-        style || '',
-        collection || '',
-        parseFloat(base_price),
-        sale_price ? parseFloat(sale_price) : null,
-        status || 'Draft',
-        parseInt(display_order || 0, 10),
-        gender || 'Unisex',
-        availability || 'Made To Order',
-        video_url || null
-      ]
-    );
-
-    const productId = result.insertId;
-
-    // Insert Images
-    if (Array.isArray(images) && images.length > 0) {
-      for (let i = 0; i < images.length; i++) {
-        if (images[i] && images[i].trim()) {
-          await query(
-            'INSERT INTO product_images (product_id, image_url, display_order) VALUES (?, ?, ?)',
-            [productId, images[i].trim(), i + 1]
-          );
-        }
-      }
-    }
-
-    // Insert Specifications
-    const defaultSpecs = [
+    // Build specs (defaults + custom), dedupe by name
+    const allSpecs = [
       { name: 'Metal Type', value: metal_type || '' },
       { name: 'Metal Color', value: metal_color || '' },
       { name: 'Purity', value: purity || '' },
       { name: 'Stone Type', value: stone_type || '' },
       { name: 'Stone Shape', value: stone_shape || '' },
-      { name: 'Cut Grade', value: cut_grade || '' }
+      { name: 'Cut Grade', value: cut_grade || '' },
     ];
-
-    const allSpecs = [...defaultSpecs];
     if (Array.isArray(specs)) {
-      specs.forEach(s => {
+      specs.forEach((s) => {
         if (s.name && s.value) {
-          allSpecs.push({ name: s.name.trim(), value: s.value.trim() });
+          const name = s.name.trim();
+          const existing = allSpecs.find((x) => x.name === name);
+          if (existing) existing.value = s.value.trim();
+          else allSpecs.push({ name, value: s.value.trim() });
         }
       });
     }
+    const cleanImages = Array.isArray(images)
+      ? images.filter((img) => img && img.trim()).map((img) => img.trim())
+      : [];
 
-    for (const spec of allSpecs) {
-      if (spec.name && spec.value) {
-        try {
-          await query(
-            'INSERT INTO product_specifications (product_id, name, value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?',
-            [productId, spec.name, spec.value, spec.value]
-          );
-        } catch (_) {
-          // ignore duplicate spec insertion errors
-        }
-      }
-    }
+    const id = await getNextId('products');
+    const now = new Date().toISOString();
 
-    return NextResponse.json({
-      success: true,
-      productId,
+    await db.collection('products').insertOne({
+      id,
+      name: name.trim(),
       sku,
-      slug: cleanSlug
-    }, { headers: corsHeaders });
+      slug: cleanSlug,
+      short_description: short_description || '',
+      description: description || '',
+      category_id: catId,
+      subcategory: subcategory || '',
+      metal_type: metal_type || '',
+      metal_color: metal_color || '',
+      purity: purity || '',
+      stone_type: stone_type || '',
+      stone_shape: stone_shape || '',
+      cut_grade: cut_grade || '',
+      style: style || '',
+      collection: collection || '',
+      base_price: parseFloat(base_price),
+      sale_price: sale_price ? parseFloat(sale_price) : null,
+      status: status || 'Draft',
+      display_order: parseInt(display_order || 0, 10),
+      gender: gender || 'Unisex',
+      availability: availability || 'Made To Order',
+      video_url: video_url || null,
+      images: cleanImages,
+      specs: allSpecs.filter((s) => s.name && s.value),
+      created_at: now,
+      updated_at: now,
+    });
+
+    return NextResponse.json({ success: true, productId: id, sku, slug: cleanSlug }, { headers: corsHeaders });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });

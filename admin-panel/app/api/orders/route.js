@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb, getNextId } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -18,39 +18,30 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('user_id');
 
-    let sql = 'SELECT * FROM orders';
-    const params = [];
-
+    const filter = {};
     if (userId) {
-      // If querying user_id, ensure they are authenticated as that user (or are admin)
-      // We can relax check or verify authUid matches userId
-      // For simple public/private checks, we check:
-      sql += ' WHERE user_id = ?';
-      params.push(userId);
+      filter.user_id = userId;
     } else {
-      // If querying all orders, must be admin
       const admin = await verifyAdminRequest(req);
       if (!admin) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
       }
     }
 
-    sql += ' ORDER BY created_at DESC';
-    const orders = await query(sql, params);
+    const db = await getDb();
+    const orders = await db.collection('orders')
+      .find(filter, { projection: { _id: 0 } })
+      .sort({ created_at: -1 })
+      .toArray();
 
-    // Parse items JSON for each order
-    const formattedOrders = orders.map(ord => {
+    const formattedOrders = orders.map((ord) => {
       let parsedItems = [];
       try {
-        parsedItems = JSON.parse(ord.items);
+        parsedItems = typeof ord.items === 'string' ? JSON.parse(ord.items) : (ord.items || []);
       } catch (_) {
         parsedItems = [];
       }
-      return {
-        ...ord,
-        items: parsedItems,
-        createdAt: ord.created_at // compatibility mapping
-      };
+      return { ...ord, items: parsedItems, createdAt: ord.created_at };
     });
 
     return NextResponse.json(formattedOrders, { headers: corsHeaders });
@@ -64,40 +55,32 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const data = await req.json();
-    const {
-      order_number,
-      user_id,
-      email,
-      name,
-      phone,
-      address,
-      total_amount,
-      payment_method,
-      items
-    } = data;
+    const { order_number, user_id, email, name, phone, address, total_amount, payment_method, items } = data;
 
     if (!order_number || !email || !name || !address || !total_amount || !items) {
       return NextResponse.json({ error: 'Missing required order fields' }, { status: 400, headers: corsHeaders });
     }
 
-    const itemsStr = typeof items === 'string' ? items : JSON.stringify(items);
+    const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
 
-    await query(
-      `INSERT INTO orders (
-        order_number, user_id, email, name, phone, address, total_amount, payment_method, items
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        order_number,
-        user_id || null,
-        email,
-        name,
-        phone || '',
-        address,
-        parseFloat(total_amount),
-        payment_method || 'COD',
-        itemsStr
-      ]
-    );
+    const db = await getDb();
+    const id = await getNextId('orders');
+    const now = new Date().toISOString();
+    await db.collection('orders').insertOne({
+      id,
+      order_number,
+      user_id: user_id || null,
+      email,
+      name,
+      phone: phone || '',
+      address,
+      total_amount: parseFloat(total_amount),
+      payment_method: payment_method || 'COD',
+      items: parsedItems,
+      status: 'Pending',
+      created_at: now,
+      updated_at: now,
+    });
 
     return NextResponse.json({ success: true, order_number }, { headers: corsHeaders });
 

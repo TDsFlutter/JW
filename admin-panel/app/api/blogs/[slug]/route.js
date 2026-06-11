@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -12,25 +12,24 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-// GET single blog post by slug
+function lookupBy(slug) {
+  const or = [{ slug }];
+  if (!isNaN(slug)) or.push({ id: parseInt(slug, 10) });
+  return { $or: or };
+}
+
+// GET single blog post by slug / id
 export async function GET(req, { params }) {
   try {
     const { slug } = await params;
+    const db = await getDb();
+    const b = await db.collection('blogs').findOne(lookupBy(slug), { projection: { _id: 0 } });
 
-    const blogs = await query('SELECT * FROM blogs WHERE slug = ? OR id = ?', [slug, isNaN(slug) ? -1 : parseInt(slug, 10)]);
-
-    if (blogs.length === 0) {
+    if (!b) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404, headers: corsHeaders });
     }
 
-    const b = blogs[0];
-    const formattedBlog = {
-      ...b,
-      coverImage: b.cover_image,
-      image: b.cover_image
-    };
-
-    return NextResponse.json(formattedBlog, { headers: corsHeaders });
+    return NextResponse.json({ ...b, coverImage: b.cover_image, image: b.cover_image }, { headers: corsHeaders });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
@@ -52,12 +51,13 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'Title, Content, and Cover Image are required' }, { status: 400, headers: corsHeaders });
     }
 
-    const result = await query(
-      'UPDATE blogs SET title = ?, content = ?, excerpt = ?, cover_image = ?, status = ? WHERE slug = ? OR id = ?',
-      [title.trim(), content, excerpt || '', cover_image.trim(), status || 'Draft', urlSlug, isNaN(urlSlug) ? -1 : parseInt(urlSlug, 10)]
+    const db = await getDb();
+    const result = await db.collection('blogs').updateOne(
+      lookupBy(urlSlug),
+      { $set: { title: title.trim(), content, excerpt: excerpt || '', cover_image: cover_image.trim(), status: status || 'Draft', updated_at: new Date().toISOString() } }
     );
 
-    if (result.affectedRows === 0) {
+    if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404, headers: corsHeaders });
     }
 
@@ -77,10 +77,10 @@ export async function DELETE(req, { params }) {
     }
 
     const { slug } = await params;
+    const db = await getDb();
+    const result = await db.collection('blogs').deleteOne(lookupBy(slug));
 
-    const result = await query('DELETE FROM blogs WHERE slug = ? OR id = ?', [slug, isNaN(slug) ? -1 : parseInt(slug, 10)]);
-
-    if (result.affectedRows === 0) {
+    if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404, headers: corsHeaders });
     }
 

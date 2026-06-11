@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import fs from 'fs';
-import path from 'path';
+import { getDb } from '@/lib/mongodb';
 import { products as initialProducts } from '@/data/products';
 import { blogPosts as initialBlogs } from '@/data/blog';
 
-// Enable CORS
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -18,212 +15,204 @@ export async function OPTIONS() {
 
 export async function POST() {
   try {
-    // 1. Read and parse schema.sql
-    const schemaPath = path.join(process.cwd(), 'db', 'schema.sql');
-    const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+    const db = await getDb();
 
-    // Split SQL by semicolon but ignore semicolons inside comments or values
-    // A simple split by semicolon is fine if schema.sql statements are separated by semicolons
-    const statements = schemaSql
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0);
+    // 1. Indexes (idempotent)
+    await db.collection('categories').createIndex({ sku_prefix: 1 }, { unique: true });
+    await db.collection('categories').createIndex({ id: 1 }, { unique: true });
+    await db.collection('products').createIndex({ sku: 1 }, { unique: true });
+    await db.collection('products').createIndex({ slug: 1 }, { unique: true });
+    await db.collection('products').createIndex({ id: 1 }, { unique: true });
+    await db.collection('specification_fields').createIndex({ name: 1 }, { unique: true });
+    await db.collection('specification_fields').createIndex({ id: 1 }, { unique: true });
+    await db.collection('blogs').createIndex({ slug: 1 }, { unique: true });
+    await db.collection('blogs').createIndex({ id: 1 }, { unique: true });
+    await db.collection('faqs').createIndex({ id: 1 }, { unique: true });
+    await db.collection('orders').createIndex({ order_number: 1 }, { unique: true });
+    await db.collection('orders').createIndex({ id: 1 }, { unique: true });
+    await db.collection('contact_inquiries').createIndex({ id: 1 }, { unique: true });
 
-    console.log(`Executing ${statements.length} schema creation statements...`);
-    for (const stmt of statements) {
-      await query(stmt);
-    }
+    const now = () => new Date().toISOString();
+    const setCounter = (name, seq) =>
+      db.collection('counters').updateOne(
+        { _id: name },
+        { $set: { seq } },
+        { upsert: true }
+      );
 
-    // 2. Check if categories table is empty, if so, seed categories
-    const categoriesCount = await query('SELECT COUNT(*) as count FROM categories');
-    if (categoriesCount[0].count === 0) {
+    // 2. Seed categories if empty
+    if ((await db.collection('categories').countDocuments()) === 0) {
       const defaultCategories = [
-        { name: 'Rings', prefix: 'RNG', order: 1 },
-        { name: 'Earrings', prefix: 'ERG', order: 2 },
-        { name: 'Necklaces', prefix: 'NCK', order: 3 },
-        { name: 'Pendants', prefix: 'PND', order: 4 },
-        { name: 'Bracelets', prefix: 'BRC', order: 5 },
-        { name: 'Bangles', prefix: 'BGL', order: 6 },
-        { name: 'Wedding Bands', prefix: 'WDB', order: 7 },
-        { name: 'Engagement Rings', prefix: 'EGR', order: 8 },
-        { name: 'Gemstone Jewelry', prefix: 'GSJ', order: 9 },
-        { name: 'Custom Jewelry', prefix: 'CST', order: 10 },
+        { name: 'Rings', prefix: 'RNG', order: 1, genders: ['Men', 'Women'] },
+        { name: 'Bracelets', prefix: 'BRC', order: 2, genders: ['Men', 'Women'] },
+        { name: 'Cuban', prefix: 'CBN', order: 3, genders: ['Men'] },
+        { name: 'Pendants', prefix: 'PND', order: 4, genders: ['Men', 'Women'] },
+        { name: 'Studs', prefix: 'STD', order: 5, genders: ['Men'] },
+        { name: 'Tennis Bracelets', prefix: 'TNB', order: 6, genders: ['Men', 'Women'] },
+        { name: 'Earrings', prefix: 'ERG', order: 7, genders: ['Women'] },
+        { name: 'Necklaces', prefix: 'NCK', order: 8, genders: ['Women'] },
       ];
-
-      for (const cat of defaultCategories) {
-        await query(
-          'INSERT INTO categories (name, sku_prefix, display_order) VALUES (?, ?, ?)',
-          [cat.name, cat.prefix, cat.order]
-        );
-      }
-      console.log('Categories seeded.');
+      const docs = defaultCategories.map((cat, i) => ({
+        id: i + 1,
+        name: cat.name,
+        sku_prefix: cat.prefix,
+        display_order: cat.order,
+        genders: cat.genders,
+        created_at: now(),
+        updated_at: now(),
+      }));
+      await db.collection('categories').insertMany(docs);
+      await setCounter('categories', docs.length);
     }
 
-    // 3. Check if specification fields are empty, if so seed default specs
-    const specsCount = await query('SELECT COUNT(*) as count FROM specification_fields');
-    if (specsCount[0].count === 0) {
+    // 3. Seed specification fields if empty
+    if ((await db.collection('specification_fields').countDocuments()) === 0) {
       const defaultSpecs = [
-        'Metal Type',
-        'Metal Color',
-        'Purity',
-        'Stone Type',
-        'Stone Shape',
-        'Cut Grade',
-        'Clarity',
-        'Carat Weight',
-        'Setting Type',
-        'Style',
-        'Collection',
-        'Certificate'
+        'Metal Type', 'Metal Color', 'Purity', 'Stone Type', 'Stone Shape',
+        'Cut Grade', 'Clarity', 'Carat Weight', 'Setting Type', 'Style',
+        'Collection', 'Certificate',
       ];
-      for (let i = 0; i < defaultSpecs.length; i++) {
-        await query(
-          'INSERT INTO specification_fields (name, display_order) VALUES (?, ?)',
-          [defaultSpecs[i], i + 1]
-        );
-      }
-      console.log('Specification fields seeded.');
+      const docs = defaultSpecs.map((name, i) => ({
+        id: i + 1,
+        name,
+        display_order: i + 1,
+      }));
+      await db.collection('specification_fields').insertMany(docs);
+      await setCounter('specification_fields', docs.length);
     }
 
     // 4. Seed products if empty
-    const productsCount = await query('SELECT COUNT(*) as count FROM products');
-    if (productsCount[0].count === 0 && initialProducts && initialProducts.length > 0) {
-      // Get categories map
-      const dbCats = await query('SELECT * FROM categories');
-      const catMap = {};
-      dbCats.forEach(c => {
-        catMap[c.name.toLowerCase()] = c.id;
-      });
+    if (
+      (await db.collection('products').countDocuments()) === 0 &&
+      Array.isArray(initialProducts) &&
+      initialProducts.length > 0
+    ) {
+      const dbCats = await db.collection('categories').find({}).toArray();
+      const catByName = {};
+      dbCats.forEach((c) => { catByName[c.name.toLowerCase()] = c; });
+      const ringsCat = catByName['rings'] || dbCats[0];
 
-      const ringsId = catMap['rings'] || dbCats[0]?.id;
-
+      const productDocs = [];
       for (let i = 0; i < initialProducts.length; i++) {
         const p = initialProducts[i];
         const catName = p.category ? p.category.toLowerCase() : 'rings';
-        const catId = catMap[catName] || ringsId;
-
-        // Auto SKU logic helper (e.g. RNG-0001)
-        const prefix = dbCats.find(c => c.id === catId)?.sku_prefix || 'RNG';
-        const skuNum = String(i + 1).padStart(4, '0');
-        const sku = `${prefix}-${skuNum}`;
+        const cat = catByName[catName] || ringsCat;
+        const prefix = cat?.sku_prefix || 'RNG';
+        const sku = `${prefix}-${String(i + 1).padStart(4, '0')}`;
         const slug = p.id || `product-${i + 1}`;
 
-        // Insert product
-        const result = await query(
-          `INSERT INTO products (
-            name, sku, slug, short_description, description, category_id, subcategory,
-            metal_type, metal_color, purity, stone_type, stone_shape, cut_grade,
-            style, collection, base_price, sale_price, status, display_order, gender, availability
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            p.name,
-            sku,
-            slug,
-            p.shortDescription || p.description || '',
-            p.description || '',
-            catId,
-            p.subcategory || '',
-            p.metalType || 'Gold',
-            p.metalColor || 'Yellow',
-            p.purity || '18K',
-            p.stoneType || 'Moissanite',
-            p.stoneShape || 'Round',
-            p.cutGrade || 'Excellent',
-            p.style || '',
-            p.collection || 'Luxury',
-            p.price || 9999.00,
-            p.originalPrice || null,
-            'Active',
-            i + 1,
-            p.gender || 'Women',
-            p.availability || 'Made To Order'
-          ]
-        );
-
-        const productId = result.insertId;
-
-        // Insert images
         const images = Array.isArray(p.images) ? p.images : [p.image].filter(Boolean);
-        for (let j = 0; j < images.length; j++) {
-          await query(
-            'INSERT INTO product_images (product_id, image_url, display_order) VALUES (?, ?, ?)',
-            [productId, images[j], j + 1]
-          );
-        }
 
-        // Insert specifications (e.g., Clarity, Weight, Setting Type)
         const specs = [
           { name: 'Metal Type', value: p.metalType || 'Gold' },
           { name: 'Metal Color', value: p.metalColor || 'Yellow' },
           { name: 'Purity', value: p.purity || '18K' },
           { name: 'Stone Type', value: p.stoneType || 'Moissanite' },
           { name: 'Stone Shape', value: p.stoneShape || 'Round' },
-          { name: 'Cut Grade', value: p.cutGrade || 'Excellent' }
+          { name: 'Cut Grade', value: p.cutGrade || 'Excellent' },
         ];
-
-        // Add additional specs from static product detail if existing
-        if (p.specs && Array.isArray(p.specs)) {
-          p.specs.forEach(s => {
-            specs.push({ name: s.label || s.name, value: s.value });
+        if (Array.isArray(p.specs)) {
+          p.specs.forEach((s) => {
+            const name = s.label || s.name;
+            if (name && !specs.find((x) => x.name === name)) {
+              specs.push({ name, value: s.value });
+            }
           });
         }
 
-        for (const spec of specs) {
-          try {
-            await query(
-              'INSERT INTO product_specifications (product_id, name, value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?',
-              [productId, spec.name, spec.value, spec.value]
-            );
-          } catch (err) {
-            // Ignore duplicate specification inserts
-          }
-        }
+        productDocs.push({
+          id: i + 1,
+          name: p.name,
+          sku,
+          slug,
+          short_description: p.shortDescription || p.description || '',
+          description: p.description || '',
+          category_id: cat?.id || ringsCat?.id,
+          subcategory: p.subcategory || '',
+          metal_type: p.metalType || 'Gold',
+          metal_color: p.metalColor || 'Yellow',
+          purity: p.purity || '18K',
+          stone_type: p.stoneType || 'Moissanite',
+          stone_shape: p.stoneShape || 'Round',
+          cut_grade: p.cutGrade || 'Excellent',
+          style: p.style || '',
+          collection: p.collection || 'Luxury',
+          base_price: p.price || 9999.0,
+          sale_price: p.originalPrice || null,
+          status: 'Active',
+          display_order: i + 1,
+          gender: p.gender || 'Women',
+          availability: p.availability || 'Made To Order',
+          video_url: null,
+          images,
+          specs,
+          created_at: now(),
+          updated_at: now(),
+        });
       }
-      console.log('Sample products seeded.');
+      await db.collection('products').insertMany(productDocs);
+      await setCounter('products', productDocs.length);
     }
 
     // 5. Seed blogs if empty
-    const blogsCount = await query('SELECT COUNT(*) as count FROM blogs');
-    if (blogsCount[0].count === 0 && initialBlogs && initialBlogs.length > 0) {
-      for (const b of initialBlogs) {
-        await query(
-          'INSERT INTO blogs (title, slug, content, excerpt, cover_image, status) VALUES (?, ?, ?, ?, ?, ?)',
-          [b.title, b.slug, b.content, b.excerpt || '', b.coverImage || b.image || '', 'Active']
-        );
-      }
-      console.log('Sample blogs seeded.');
+    if (
+      (await db.collection('blogs').countDocuments()) === 0 &&
+      Array.isArray(initialBlogs) &&
+      initialBlogs.length > 0
+    ) {
+      const docs = initialBlogs.map((b, i) => ({
+        id: i + 1,
+        title: b.title,
+        slug: b.slug,
+        content: b.content,
+        excerpt: b.excerpt || '',
+        cover_image: b.coverImage || b.image || '',
+        status: 'Active',
+        created_at: now(),
+        updated_at: now(),
+      }));
+      await db.collection('blogs').insertMany(docs);
+      await setCounter('blogs', docs.length);
     }
 
     // 6. Seed FAQs if empty
-    const faqsCount = await query('SELECT COUNT(*) as count FROM faqs');
-    if (faqsCount[0].count === 0) {
+    if ((await db.collection('faqs').countDocuments()) === 0) {
       const defaultFaqs = [
-        { q: "What is moissanite?", a: "Moissanite is a lab-created gemstone that rivals the brilliance and fire of natural diamonds. It ranks 9.25 on the Mohs hardness scale.", o: 1 },
-        { q: "Is your jewelry made of real sterling silver?", a: "Yes! All our jewelry is crafted from premium 92.5% purity solid sterling silver (925 silver).", o: 2 },
-        { q: "Will the silver tarnish over time?", a: "Sterling silver can naturally tarnish, but we apply thick Platinum or Gold plating to resist it.", o: 3 }
+        { q: 'What is moissanite?', a: 'Moissanite is a lab-created gemstone that rivals the brilliance and fire of natural diamonds. It ranks 9.25 on the Mohs hardness scale.', o: 1 },
+        { q: 'Is your jewelry made of real sterling silver?', a: 'Yes! All our jewelry is crafted from premium 92.5% purity solid sterling silver (925 silver).', o: 2 },
+        { q: 'Will the silver tarnish over time?', a: 'Sterling silver can naturally tarnish, but we apply thick Platinum or Gold plating to resist it.', o: 3 },
       ];
-      for (const f of defaultFaqs) {
-        await query(
-          'INSERT INTO faqs (question, answer, display_order) VALUES (?, ?, ?)',
-          [f.q, f.a, f.o]
-        );
-      }
-      console.log('FAQs seeded.');
+      const docs = defaultFaqs.map((f, i) => ({
+        id: i + 1,
+        question: f.q,
+        answer: f.a,
+        display_order: f.o,
+        created_at: now(),
+        updated_at: now(),
+      }));
+      await db.collection('faqs').insertMany(docs);
+      await setCounter('faqs', docs.length);
     }
 
-    // 7. Seed initial admin user if not exists
-    const usersCount = await query('SELECT COUNT(*) as count FROM users');
-    if (usersCount[0].count === 0) {
-      await query(
-        'INSERT INTO users (uid, email, display_name, role) VALUES (?, ?, ?, ?)',
-        ['mock-admin-uid', 'admin@ella-jewelry.com', 'Admin User', 'admin']
-      );
-      console.log('Sample admin user seeded.');
+    // 7. Seed initial admin user if none exist
+    if ((await db.collection('users').countDocuments()) === 0) {
+      await db.collection('users').insertOne({
+        _id: 'mock-admin-uid',
+        uid: 'mock-admin-uid',
+        email: 'admin@ella-jewelry.com',
+        display_name: 'Admin User',
+        role: 'admin',
+        address: '',
+        phone: '',
+        wishlist: '[]',
+        created_at: now(),
+        updated_at: now(),
+      });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Database initialized and seeded successfully.',
+      message: 'MongoDB initialized and seeded successfully.',
     }, { headers: corsHeaders });
 
   } catch (error) {

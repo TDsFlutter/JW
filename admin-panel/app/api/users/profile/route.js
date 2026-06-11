@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
@@ -61,7 +61,7 @@ export async function GET(req) {
     // Auth verification
     const authUser = getAuthenticatedUser(req);
     const admin = await verifyAdminRequest(req);
-    
+
     if (!authUser && !admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
@@ -70,24 +70,37 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders });
     }
 
-    const users = await query('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (users.length === 0) {
-      // Return a default new user structure
+    let user = null;
+    try {
+      const db = await getDb();
+      user = await db.collection('users').findOne({ _id: uid });
+    } catch (dbError) {
+      // Database unreachable/uninitialized — degrade gracefully instead of 500.
+      console.warn('Profile DB lookup failed, returning default profile:', dbError.message);
+    }
+
+    if (!user) {
+      // Return a default user structure (also used when the DB is unavailable)
+      const defaultRole =
+        uid === '0AZ01BRGcUbmRWiG3pcMBeBXzwx1' ||
+        (authUser?.email || '').toLowerCase().includes('admin')
+          ? 'admin'
+          : 'customer';
       return NextResponse.json({
         uid,
         email: authUser?.email || '',
         displayName: authUser?.displayName || '',
-        role: 'customer',
+        role: defaultRole,
         address: '',
         phone: '',
         wishlist: '[]'
       }, { headers: corsHeaders });
     }
 
-    const user = users[0];
+    const { _id, ...rest } = user;
     return NextResponse.json({
-      ...user,
-      // Ensure wishlist is returned as parsed array or stringified JSON
+      ...rest,
+      uid: user.uid || _id,
       wishlist: user.wishlist || '[]'
     }, { headers: corsHeaders });
 
@@ -109,7 +122,7 @@ export async function POST(req) {
     // Auth verification
     const authUser = getAuthenticatedUser(req);
     const admin = await verifyAdminRequest(req);
-    
+
     if (!authUser && !admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
@@ -118,66 +131,46 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders });
     }
 
-    // Prepare wishlist string representation
     let wishlistStr = '[]';
     if (wishlist) {
       wishlistStr = typeof wishlist === 'string' ? wishlist : JSON.stringify(wishlist);
     }
 
-    // Check if user already exists
-    const existing = await query('SELECT role, wishlist FROM users WHERE uid = ?', [uid]);
+    const db = await getDb();
+    const existing = await db.collection('users').findOne({ _id: uid });
 
     // Role safety: only admins can update roles, customers default to 'customer'
     let finalRole = 'customer';
-    if (existing.length > 0) {
-      finalRole = existing[0].role; // keep existing role
+    if (existing) {
+      finalRole = existing.role; // keep existing role
     }
     if (admin && role) {
       finalRole = role; // admin can set roles
-    } else if (existing.length === 0) {
-      // Special check for first signup of the primary admin email
-      if (email === 'trunaldungarani15@gmail.com' || email.toLowerCase().includes('admin')) {
+    } else if (!existing) {
+      // First signup of the primary admin email or hardcoded super-admin UID
+      if (email === 'trunaldungarani15@gmail.com' || email.toLowerCase().includes('admin') || uid === '0AZ01BRGcUbmRWiG3pcMBeBXzwx1') {
         finalRole = 'admin';
       }
     }
 
-    if (existing.length > 0) {
-      // Update
-      await query(
-        `UPDATE users SET 
-          email = ?, 
-          display_name = ?, 
-          role = ?, 
-          address = ?, 
-          phone = ?, 
-          wishlist = ? 
-        WHERE uid = ?`,
-        [
-          email.trim(),
-          displayName || '',
-          finalRole,
-          address || '',
-          phone || '',
-          wishlistStr,
-          uid
-        ]
-      );
-    } else {
-      // Create
-      await query(
-        `INSERT INTO users (uid, email, display_name, role, address, phone, wishlist)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
+    const now = new Date().toISOString();
+    await db.collection('users').updateOne(
+      { _id: uid },
+      {
+        $set: {
           uid,
-          email.trim(),
-          displayName || '',
-          finalRole,
-          address || '',
-          phone || '',
-          wishlistStr
-        ]
-      );
-    }
+          email: email.trim(),
+          display_name: displayName || '',
+          role: finalRole,
+          address: address || '',
+          phone: phone || '',
+          wishlist: wishlistStr,
+          updated_at: now,
+        },
+        $setOnInsert: { created_at: now },
+      },
+      { upsert: true }
+    );
 
     return NextResponse.json({
       success: true,
