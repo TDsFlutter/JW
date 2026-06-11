@@ -235,10 +235,11 @@ export default function AdminDashboard() {
   // Force-refresh every resource (used after a full DB re-init).
   const loadAllData = () => loadResources(ALL_RESOURCES, { force: true });
 
-  // Load only the active tab's data, once it's active — not everything upfront.
+  // On every section click, fetch THAT section's API(s) fresh (in parallel) —
+  // never everything upfront, and always up-to-date data when you open a tab.
   useEffect(() => {
     if (currentUser && isAdmin) {
-      loadResources(TAB_RESOURCES[activeTab] || []);
+      loadResources(TAB_RESOURCES[activeTab] || [], { force: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isAdmin, activeTab]);
