@@ -71,10 +71,22 @@ export default function TopProducts() {
               </button>
             ))}
             <div className={styles.arrows}>
-              <button className={styles.arrowBtn} aria-label="Previous">
+              <button
+                className={styles.arrowBtn}
+                aria-label="Previous"
+                onClick={() =>
+                  setActiveCategory((prev) => (prev - 1 + categories.length) % categories.length)
+                }
+              >
                 &lt;
               </button>
-              <button className={styles.arrowBtn} aria-label="Next">
+              <button
+                className={styles.arrowBtn}
+                aria-label="Next"
+                onClick={() =>
+                  setActiveCategory((prev) => (prev + 1) % categories.length)
+                }
+              >
                 &gt;
               </button>
             </div>
