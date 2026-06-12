@@ -50,7 +50,7 @@ jobs:
           NEXT_PUBLIC_GITLAB_BRANCH: main
           NEXT_PUBLIC_GITLAB_UPLOAD_PATH: public/uploads
           NEXT_PUBLIC_ADMIN_URL: https://admin.ella-jewelry.com
-          NEXT_PUBLIC_WHATSAPP_NUMBER: "919876543210"
+          NEXT_PUBLIC_WHATSAPP_NUMBER: "918469973158"
 
       - name: Add .nojekyll
         run: touch ./out/.nojekyll
