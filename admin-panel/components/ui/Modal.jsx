@@ -20,11 +20,17 @@ export default function Modal({
   const lastFocused = useRef(null);
   const titleId = useRef(`modal-${Math.random().toString(36).slice(2)}`).current;
 
+  // Keep latest onClose without making it an effect dependency — callers pass an
+  // inline arrow, so a new identity each render would otherwise re-run the focus
+  // effect on every keystroke and steal focus back to the panel.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     lastFocused.current = document.activeElement;
     const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") onCloseRef.current?.();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -35,7 +41,7 @@ export default function Modal({
       document.body.style.overflow = "";
       if (lastFocused.current instanceof HTMLElement) lastFocused.current.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
