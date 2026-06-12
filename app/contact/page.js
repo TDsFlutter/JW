@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { WHATSAPP_NUMBER } from "@/lib/whatsapp";
 import styles from "./contact.module.css";
 
 export default function ContactPage() {
@@ -125,7 +126,7 @@ export default function ContactPage() {
               <div>
                 <div className={styles.infoLabel}>WhatsApp</div>
                 <div className={styles.infoValue}>
-                  <a href={`https://wa.me/${contacts.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                  <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
                     {contacts.whatsapp}
                   </a>
                 </div>

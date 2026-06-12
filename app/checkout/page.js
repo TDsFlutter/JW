@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
+import { buildOrderMessage, openWhatsApp } from "@/lib/whatsapp";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import styles from "./checkout.module.css";
 
@@ -34,9 +35,6 @@ export default function CheckoutPage() {
     state: "",
     zip: "",
     country: "India",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCvc: "",
   });
 
   // Autofill forms from user profile when loaded
@@ -73,24 +71,45 @@ export default function CheckoutPage() {
 
     const generatedId = "ord_" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
+    const orderItems = cart.map(item => ({
+      id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      metal: item.selectedMetal || "",
+      size: item.selectedSize || ""
+    }));
+
+    const fullName = `${form.firstName} ${form.lastName}`.trim();
+    const fullAddress = `${form.address}, ${form.city}, ${form.state}, ${form.zip}, ${form.country}`;
+
     const orderPayload = {
       order_number: generatedId,
       user_id: currentUser?.uid || null,
       email: form.email || currentUser?.email || "guest@ella.com",
-      name: `${form.firstName} ${form.lastName}`,
+      name: fullName,
       phone: form.phone || '',
-      address: `${form.address}, ${form.city}, ${form.state}, ${form.zip}, ${form.country}`,
+      address: fullAddress,
       total_amount: total,
-      payment_method: "Credit Card",
-      items: cart.map(item => ({
-        id: item.product.id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity,
-        metal: item.selectedMetal || "",
-        size: item.selectedSize || ""
-      }))
+      payment_method: "WhatsApp",
+      items: orderItems
     };
+
+    // Open WhatsApp synchronously within the click gesture so popup blockers
+    // don't kill it (anything after the await below would be blocked).
+    openWhatsApp(
+      buildOrderMessage({
+        orderNumber: generatedId,
+        name: fullName,
+        phone: form.phone,
+        address: fullAddress,
+        items: orderItems,
+        subtotal: cartSubtotal,
+        shipping,
+        tax,
+        total,
+      })
+    );
 
     try {
       const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
@@ -158,10 +177,11 @@ export default function CheckoutPage() {
             >
               <div className={styles.successCard}>
                 <div className={styles.successIcon}>✓</div>
-                <h1 className={styles.successTitle}>Order Placed!</h1>
+                <h1 className={styles.successTitle}>Order Sent!</h1>
                 <p className={styles.successText}>
-                  Thank you for your purchase. Your order has been confirmed and
-                  will be shipped within 2-3 business days.
+                  We&apos;ve opened WhatsApp with your order details — just press
+                  Send to confirm with us. We&apos;ll reply about availability,
+                  payment and delivery shortly.
                 </p>
                 <p className={styles.orderId}>
                   Order #{orderId}
@@ -291,50 +311,13 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <h2 className={`${styles.sectionTitle} ${styles.paymentTitle}`}>
-                    Payment Details
-                  </h2>
-                  <div className={styles.formGrid}>
-                    <div className={styles.fieldFull}>
-                      <label className={styles.label}>Card Number</label>
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        required
-                        placeholder="1234 5678 9012 3456"
-                        className={styles.input}
-                        value={form.cardNumber}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Expiry</label>
-                      <input
-                        type="text"
-                        name="cardExpiry"
-                        required
-                        placeholder="MM/YY"
-                        className={styles.input}
-                        value={form.cardExpiry}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>CVC</label>
-                      <input
-                        type="text"
-                        name="cardCvc"
-                        required
-                        placeholder="123"
-                        className={styles.input}
-                        value={form.cardCvc}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
+                  <p className={styles.whatsappNote}>
+                    No online payment needed — your order details are sent to us on
+                    WhatsApp, where we confirm availability, payment and delivery with you directly.
+                  </p>
 
                   <button type="submit" className={styles.placeOrderBtn} disabled={isSubmitting}>
-                    {isSubmitting ? "PROCESSING ORDER..." : `PLACE ORDER — ₹${total.toFixed(2)}`}
+                    {isSubmitting ? "OPENING WHATSAPP..." : `ORDER ON WHATSAPP — ₹${total.toFixed(2)}`}
                   </button>
                 </div>
 

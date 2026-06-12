@@ -496,6 +496,31 @@
   color: var(--text-dark);
 }
 
+.whatsappBtn {
+  width: 100%;
+  padding: 14px 24px;
+  background: #25D366;
+  color: #fff;
+  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: 20px;
+  border: 2px solid #25D366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.whatsappBtn:hover {
+  background: transparent;
+  color: #1da851;
+}
+
 /* ===== OFFER GRID ===== */
 .offerGrid {
   display: grid;

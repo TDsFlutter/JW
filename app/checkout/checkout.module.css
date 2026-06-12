@@ -133,6 +133,17 @@
   box-shadow: 0 0 0 2px rgba(155, 14, 46, 0.08);
 }
 
+.whatsappNote {
+  margin-top: 28px;
+  padding: 14px 16px;
+  background: #f0faf2;
+  border: 1px solid #cdeccf;
+  border-radius: var(--radius-sm);
+  color: #2f6b3a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .placeOrderBtn {
   margin-top: 32px;
   width: 100%;
