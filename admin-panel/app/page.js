@@ -16,6 +16,18 @@ import { ToastBridge } from "@/components/ui/Toast";
 
 const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_SITE_URL || "http://localhost:3000";
 
+const PRODUCT_STATUS_OPTIONS = ["Draft", "Active", "Deactive", "Out of Stock"];
+
+const statusSelectCls = (s) => {
+  const tones = {
+    Active: "border-green-300 bg-green-50 text-green-700",
+    Draft: "border-amber-300 bg-amber-50 text-amber-700",
+    Deactive: "border-gray-300 bg-gray-100 text-gray-600",
+    "Out of Stock": "border-red-300 bg-red-50 text-red-700",
+  };
+  return `cursor-pointer rounded-md border px-2 py-1 text-xs font-semibold outline-none focus:ring-2 focus:ring-gold/40 ${tones[s] || "border-line bg-white text-ink"}`;
+};
+
 export default function AdminDashboard() {
   const { currentUser, isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -428,6 +440,36 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       setError("Error deleting product: " + err.message);
+    }
+  };
+
+  // Inline quick-edit: update a single product's status from the listing row,
+  // optimistically reflecting it in the UI and reverting if the request fails.
+  const handleProductStatusChange = async (product, status) => {
+    if (status === product.status) return;
+    const prevStatus = product.status;
+    setError("");
+    setSuccess("");
+    setProducts((list) =>
+      list.map((x) => (x.id === product.id ? { ...x, status } : x))
+    );
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`/api/products/${product.slug}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to update status.");
+      }
+      setSuccess(`Status updated to "${status}".`);
+    } catch (err) {
+      setProducts((list) =>
+        list.map((x) => (x.id === product.id ? { ...x, status: prevStatus } : x))
+      );
+      setError(err.message || "Failed to update status.");
     }
   };
 
@@ -869,7 +911,6 @@ export default function AdminDashboard() {
   const tHead = "border-b border-line bg-sand";
   const tRow = "border-b border-line transition-colors hover:bg-sand";
   const fieldCls = "rounded border border-line bg-sand px-3 py-2 text-sm text-ink outline-none focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/20";
-  const statusTone = (s) => (s === "Active" ? "success" : s === "Draft" ? "warning" : "danger");
 
   return (
     <>
@@ -930,9 +971,9 @@ export default function AdminDashboard() {
                     className={`${fieldCls} cursor-pointer`}
                   >
                     <option value="all">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Inactive">Inactive</option>
+                    {PRODUCT_STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -964,7 +1005,21 @@ export default function AdminDashboard() {
                           <td className={`${td} text-ink`}>{p.name}</td>
                           <td className={td}>{p.category}</td>
                           <td className={`${td} font-medium text-ink`}>₹{p.price}</td>
-                          <td className={td}><Badge tone={statusTone(p.status)}>{p.status}</Badge></td>
+                          <td className={td}>
+                            <select
+                              value={PRODUCT_STATUS_OPTIONS.includes(p.status) ? p.status : ""}
+                              onChange={(e) => handleProductStatusChange(p, e.target.value)}
+                              className={statusSelectCls(p.status)}
+                              aria-label={`Update status for ${p.name}`}
+                            >
+                              {!PRODUCT_STATUS_OPTIONS.includes(p.status) && p.status && (
+                                <option value={p.status}>{p.status}</option>
+                              )}
+                              {PRODUCT_STATUS_OPTIONS.map((s) => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          </td>
                           <td className={td}>{p.display_order}</td>
                           <td className={td}>
                             <div className="flex gap-2">
@@ -1427,9 +1482,9 @@ export default function AdminDashboard() {
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Status</label>
                   <select value={formProdStatus} onChange={(e) => setFormProdStatus(e.target.value)} className={styles.input}>
-                    <option value="Draft">Draft</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    {PRODUCT_STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
                 <div className={styles.formGroup}>

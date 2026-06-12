@@ -4,9 +4,11 @@ import { verifyAdminRequest } from '@/lib/auth';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+const ALLOWED_STATUSES = ['Draft', 'Active', 'Deactive', 'Out of Stock'];
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
@@ -129,6 +131,41 @@ export async function PUT(req, { params }) {
     );
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
+
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+  }
+}
+
+// PATCH (partial update — currently status only, for inline quick-edit) (Admin Auth)
+export async function PATCH(req, { params }) {
+  try {
+    const admin = await verifyAdminRequest(req);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+    }
+
+    const { slug } = await params;
+    const { status } = await req.json();
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}` },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const db = await getDb();
+    const result = await db.collection('products').updateOne(
+      lookupBy(slug),
+      { $set: { status, updated_at: new Date().toISOString() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404, headers: corsHeaders });
+    }
+
+    return NextResponse.json({ success: true, status }, { headers: corsHeaders });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });

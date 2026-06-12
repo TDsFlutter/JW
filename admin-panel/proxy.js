@@ -6,7 +6,7 @@ const ADMIN_UID = "DUWfmbYSCbhqEF0WvnL4tyiXXvX2";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
@@ -79,7 +79,8 @@ export function proxy(req) {
 
   // ── ADMIN-only ─────────────────────────────────────────────────────
   const isCatalogWrite =
-    (method === "POST" || method === "PUT" || method === "DELETE") && startsWithAny(pathname, CATALOG);
+    (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE") &&
+    startsWithAny(pathname, CATALOG);
   const isAdminArea =
     pathname === "/api/db-init" ||
     pathname === "/api/stats" ||
