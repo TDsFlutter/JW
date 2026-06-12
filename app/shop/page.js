@@ -31,9 +31,12 @@ function ShopContent() {
   const [categoryList, setCategoryList] = useState(["All"]);
   const [loading, setLoading] = useState(true);
 
-  // ── Load products (with API backend check) ───────────────────────────────
+  // ── Load products (stale-while-revalidate) ───────────────────────────────
   const loadProducts = useCallback(async () => {
-    // 1. Try cache first
+    // 1. Paint instantly from cache if present, but ALWAYS revalidate below so
+    //    products activated in the admin panel show up without waiting for the
+    //    cache TTL to expire.
+    let servedFromCache = false;
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
@@ -42,25 +45,25 @@ function ShopContent() {
           setProductList(data);
           setCategoryList(cats);
           setLoading(false);
-          return;
+          servedFromCache = true;
         }
       }
     } catch (_) {
       // Ignore corrupt cache
     }
 
-    // 2. Fetch from Backend MySQL APIs
+    // 2. Fetch fresh from the backend APIs and overwrite whatever we showed.
     const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
     try {
       const prodRes = await fetch(`${ADMIN_URL}/api/products?status=Active`);
       const catsRes = await fetch(`${ADMIN_URL}/api/categories`);
-      
+
       if (prodRes.ok && catsRes.ok) {
         const prodsData = await prodRes.json();
         const catsData = await catsRes.json();
-        
+
         const finalProducts = prodsData.length > 0 ? prodsData : mockProducts;
-        
+
         const catNames = new Set(["All"]);
         catsData.forEach(c => catNames.add(c.name));
         const finalCats = Array.from(catNames);
@@ -82,10 +85,12 @@ function ShopContent() {
       console.error("Backend fetch error, falling back to mocks:", err);
     }
 
-    // 3. Fallback to mock data if API fails or Firebase local mock is running
-    setProductList(mockProducts);
-    setCategoryList(mockCategories);
-    setLoading(false);
+    // 3. Fallback to mock data only if we had nothing to show from cache.
+    if (!servedFromCache) {
+      setProductList(mockProducts);
+      setCategoryList(mockCategories);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
