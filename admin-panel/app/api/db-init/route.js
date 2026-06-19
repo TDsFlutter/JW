@@ -197,8 +197,8 @@ export async function POST() {
     // 7. Seed the single authorized admin user if none exist
     if ((await db.collection('users').countDocuments()) === 0) {
       await db.collection('users').insertOne({
-        _id: 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2',
-        uid: 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2',
+        _id: '7InVfzqvPcZZ3T1U2e1Ky6S1Sv32',
+        uid: '7InVfzqvPcZZ3T1U2e1Ky6S1Sv32',
         email: 'admin@jw.com',
         display_name: 'Admin',
         role: 'admin',

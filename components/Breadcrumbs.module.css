@@ -15,7 +15,7 @@
 }
 
 .link {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   color: var(--text-gray);
   transition: color var(--transition-fast);
@@ -32,7 +32,7 @@
 }
 
 .current {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   color: var(--text-dark);
   font-weight: 600;

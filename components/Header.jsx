@@ -44,7 +44,7 @@ export default function Header() {
       <div className={styles.topRow}>
         <div className={styles.logo}>
           <Link href="/" className={styles.logoText}>
-            ëlla
+            ORNIVAJEWELS
           </Link>
         </div>
 

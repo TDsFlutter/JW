@@ -5,7 +5,7 @@
   min-height: calc(100vh - 120px);
   background-color: #faf9f6;
   padding: 40px 20px;
-  font-family: var(--font-lato), sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
 }
 
 .authCard {
@@ -19,13 +19,13 @@
 }
 
 .title {
-  font-family: var(--font-baskerville), serif;
-  font-size: 2rem;
+  font-family: var(--font-cinzel), 'Cinzel', serif;
+  font-size: 1.6rem;
   color: #1a1a1a;
   text-align: center;
   margin-bottom: 8px;
-  font-weight: 400;
-  letter-spacing: 1px;
+  font-weight: 500;
+  letter-spacing: 2px;
 }
 
 .subtitle {

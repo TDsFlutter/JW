@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
-import { isFirebaseConfigured, db, rtdb } from "@/lib/firebase";
+import { isFirebaseConfigured, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, set as dbSet } from "firebase/database";
 import { products } from "@/data/products";
 import Link from "next/link";
 
@@ -28,7 +27,7 @@ export default function SeedPage() {
     }
 
     try {
-      // 1. Seed Products to Firestore and Stock to Realtime DB
+      // 1. Seed Products to Firestore
       addLog(`Seeding ${products.length} products...`);
       for (const product of products) {
         addLog(`Processing product: ${product.name} (${product.slug})`);
@@ -52,12 +51,6 @@ export default function SeedPage() {
           shipping: product.shipping,
           createdAt: new Date().toISOString()
         });
-
-        if (rtdb) {
-          const stockRef = ref(rtdb, `inventory/${product.slug}`);
-          await dbSet(stockRef, Number(product.stock));
-          addLog(`  -> Stock set to ${product.stock} in Realtime Database`);
-        }
       }
 
       // 2. Seed Default FAQ Content
@@ -126,7 +119,7 @@ export default function SeedPage() {
         phone: "+91 98765 43210",
         whatsapp: "+91 98765 43210",
         email: "support@ella-jewelry.com",
-        address: "ëlla Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
+        address: "ORNIVAJEWELS Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
         hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST\nSunday: Closed",
         instagram: "https://instagram.com",
         facebook: "https://facebook.com",

@@ -43,12 +43,6 @@ jobs:
           NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: jewelry-website-8f9e2.firebasestorage.app
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "440556580032"
           NEXT_PUBLIC_FIREBASE_APP_ID: 1:440556580032:web:9cd7440712f6c907fa9125
-          NEXT_PUBLIC_FIREBASE_DATABASE_URL: https://jewelry-website-8f9e2-default-rtdb.firebaseio.com/
-          NEXT_PUBLIC_GITLAB_BASE_URL: https://gitlab.com
-          NEXT_PUBLIC_GITLAB_ACCESS_TOKEN: ${{ secrets.NEXT_PUBLIC_GITLAB_ACCESS_TOKEN }}
-          NEXT_PUBLIC_GITLAB_PROJECT_ID: "82976126"
-          NEXT_PUBLIC_GITLAB_BRANCH: main
-          NEXT_PUBLIC_GITLAB_UPLOAD_PATH: public/uploads
           NEXT_PUBLIC_ADMIN_URL: https://admin.ella-jewelry.com
           NEXT_PUBLIC_WHATSAPP_NUMBER: "918469973158"
 

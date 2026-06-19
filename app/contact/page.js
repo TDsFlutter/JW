@@ -13,7 +13,7 @@ export default function ContactPage() {
     phone: "+91 98765 43210",
     whatsapp: "+91 98765 43210",
     email: "support@ella-jewelry.com",
-    address: "ëlla Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
+    address: "ORNIVAJEWELS Jewelry Studio\nDiamond Bourse, BKC\nMumbai, Maharashtra 400051",
     hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST\nSunday: Closed",
     instagram: "https://instagram.com",
     facebook: "https://facebook.com",

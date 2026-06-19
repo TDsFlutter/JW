@@ -10,7 +10,7 @@
 }
 
 .pageTitle {
-  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 32px;
   font-weight: 600;
   color: var(--crimson);
@@ -36,14 +36,14 @@
 }
 
 .emptyTitle {
-  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 28px;
   color: var(--text-dark);
   margin-bottom: 8px;
 }
 
 .emptyText {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 15px;
   color: var(--text-gray);
   margin-bottom: 24px;
@@ -54,7 +54,7 @@
   padding: 12px 32px;
   background: var(--crimson);
   color: #fff;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-weight: 700;
   border-radius: var(--radius-sm);
   transition: background var(--transition-fast);
@@ -78,7 +78,7 @@
 }
 
 .sectionTitle {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-dark);
@@ -108,7 +108,7 @@
 }
 
 .label {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-gray);
@@ -121,7 +121,7 @@
   padding: 10px 14px;
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
   color: var(--text-dark);
   background: var(--bg-white);
@@ -150,7 +150,7 @@
   padding: 16px 24px;
   background: var(--crimson);
   color: #fff;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -179,7 +179,7 @@
 }
 
 .summaryTitle {
-  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: var(--text-dark);
@@ -216,7 +216,7 @@
 }
 
 .summaryItemName {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-dark);
@@ -226,13 +226,13 @@
 }
 
 .summaryItemVariant {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 11px;
   color: var(--text-light);
 }
 
 .summaryItemPrice {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-dark);
@@ -248,7 +248,7 @@
 .summaryRow {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
   color: var(--text-gray);
   padding: 4px 0;
@@ -262,7 +262,7 @@
 }
 
 .freeShipNote {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   color: #16A34A;
   font-weight: 600;
@@ -299,7 +299,7 @@
 }
 
 .successTitle {
-  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 32px;
   font-weight: 600;
   color: var(--text-dark);
@@ -307,7 +307,7 @@
 }
 
 .successText {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 15px;
   color: var(--text-gray);
   line-height: 1.6;
@@ -315,7 +315,7 @@
 }
 
 .orderId {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
   color: var(--text-light);
   margin-bottom: 28px;

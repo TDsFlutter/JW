@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
+// NOTE: `output: 'export'` (static export for GitHub Pages) was removed so the
+// website can run server-side API routes and connect to MongoDB directly.
+// Deploy on a Node host (e.g. Vercel) and set MONGODB_URI in its env.
 const nextConfig = {
-  output: 'export',
   images: {
     unoptimized: true,
   },

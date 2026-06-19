@@ -1,6 +1,6 @@
 // Admin access is restricted to a SINGLE identity.
 const ADMIN_EMAIL = 'admin@jw.com';
-const ADMIN_UID = 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2';
+const ADMIN_UID = '7InVfzqvPcZZ3T1U2e1Ky6S1Sv32';
 
 function decodeJwt(token) {
   try {

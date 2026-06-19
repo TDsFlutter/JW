@@ -24,8 +24,7 @@ export default function ProductPageClient({ params }) {
     if (!slug) return;
     setLoading(true);
 
-    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
-    fetch(`${ADMIN_URL}/api/products/${slug}`)
+    fetch(`/api/products/${slug}`)
       .then(res => {
         if (res.ok) return res.json();
         throw new Error("Not found");
@@ -216,9 +215,8 @@ function ProductDetail({ product }) {
 
   useEffect(() => {
     const fetchRelated = async () => {
-      const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
       try {
-        const res = await fetch(`${ADMIN_URL}/api/products?category=${encodeURIComponent(product.category)}`);
+        const res = await fetch(`/api/products?category=${encodeURIComponent(product.category)}`);
         if (res.ok) {
           const prods = await res.json();
           const filtered = prods.filter(p => p.slug !== product.slug);
@@ -845,7 +843,7 @@ function ProductDetail({ product }) {
             </div>
 
             <div className={styles.whySection}>
-              <h3 className={styles.whyTitle}>Why Choose ëlla Moissanite</h3>
+              <h3 className={styles.whyTitle}>Why Choose ORNIVAJEWELS Moissanite</h3>
               <ul className={styles.whyList}>
                 {whyMoissanitePoints.map((p, idx) => (
                   <li key={idx} className={styles.whyItem}>
@@ -854,7 +852,7 @@ function ProductDetail({ product }) {
                 ))}
               </ul>
               <p className={styles.whySeparator}>
-                Each <strong>ëlla Moissanite gemstone</strong> is a masterpiece of luxury, meticulously authenticated and GIA certified to meet uncompromising standards of brilliance.
+                Each <strong>ORNIVAJEWELS Moissanite gemstone</strong> is a masterpiece of luxury, meticulously authenticated and GIA certified to meet uncompromising standards of brilliance.
               </p>
               <p className={styles.whyCallout}>
                 Even expert jewelers can&apos;t distinguish <strong>Moissanite</strong> from a natural diamond — even with a diamond tester!
@@ -931,7 +929,7 @@ function ProductDetail({ product }) {
                   <span className={styles.compHeaderLabel}>Attribute</span>
                 </th>
                 <th className={styles.compMoissanite}>
-                  <span className={styles.compHeaderLabel}>ëlla Moissanite</span>
+                  <span className={styles.compHeaderLabel}>ORNIVAJEWELS Moissanite</span>
                 </th>
                 <th className={styles.compDiamond}>
                   <span className={styles.compHeaderLabel}>Natural Diamond</span>

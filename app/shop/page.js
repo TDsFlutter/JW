@@ -52,11 +52,10 @@ function ShopContent() {
       // Ignore corrupt cache
     }
 
-    // 2. Fetch fresh from the backend APIs and overwrite whatever we showed.
-    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+    // 2. Fetch fresh from the website's own API (reads MongoDB directly).
     try {
-      const prodRes = await fetch(`${ADMIN_URL}/api/products?status=Active`);
-      const catsRes = await fetch(`${ADMIN_URL}/api/categories`);
+      const prodRes = await fetch(`/api/products?status=Active`);
+      const catsRes = await fetch(`/api/categories`);
 
       if (prodRes.ok && catsRes.ok) {
         const prodsData = await prodRes.json();

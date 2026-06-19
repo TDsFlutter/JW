@@ -81,7 +81,7 @@ export async function GET(req) {
     if (!user) {
       // Return a default user structure (also used when the DB is unavailable)
       const defaultRole =
-        uid === 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2' ||
+        uid === '7InVfzqvPcZZ3T1U2e1Ky6S1Sv32' ||
         (authUser?.email || '').toLowerCase() === 'admin@jw.com'
           ? 'admin'
           : 'customer';
@@ -147,7 +147,7 @@ export async function POST(req) {
       finalRole = role; // admin can set roles
     } else if (!existing) {
       // Only the single authorized admin identity gets the admin role
-      if (email.toLowerCase() === 'admin@jw.com' || uid === 'DUWfmbYSCbhqEF0WvnL4tyiXXvX2') {
+      if (email.toLowerCase() === 'admin@jw.com' || uid === '7InVfzqvPcZZ3T1U2e1Ky6S1Sv32') {
         finalRole = 'admin';
       }
     }

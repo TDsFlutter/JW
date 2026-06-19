@@ -45,7 +45,7 @@ Best Storage Practices:
     image: "/assets/Rectangle 15.png",
     date: "May 15, 2026",
     category: "Custom Design",
-    content: `Have you ever dreamed of a piece of jewelry that is uniquely yours? At ëlla, we believe in bringing your imagination to life. Whether it is a modification of an existing design or a completely new creation, our custom design process is crafted to be collaborative, exciting, and precise.
+    content: `Have you ever dreamed of a piece of jewelry that is uniquely yours? At ORNIVAJEWELS, we believe in bringing your imagination to life. Whether it is a modification of an existing design or a completely new creation, our custom design process is crafted to be collaborative, exciting, and precise.
 
 Our Step-by-Step Custom Process:
 1. The Initial Consultation: Share your ideas, sketches, or reference images with us. We will discuss materials, gemstone choices, dimensions, and budget.

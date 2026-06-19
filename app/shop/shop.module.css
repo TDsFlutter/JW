@@ -15,7 +15,7 @@
 }
 
 .title {
-  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 36px;
   font-weight: 600;
   color: var(--crimson);
@@ -23,7 +23,7 @@
 }
 
 .subtitle {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 15px;
   color: var(--text-gray);
   max-width: 520px;
@@ -50,7 +50,7 @@
 
 .catBtn {
   padding: 8px 20px;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-gray);
@@ -79,14 +79,14 @@
 }
 
 .sortLabel {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   color: var(--text-gray);
 }
 
 .sortSelect {
   padding: 8px 12px;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -101,7 +101,7 @@
 }
 
 .resultCount {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   color: var(--text-light);
   padding: 12px 0;
@@ -116,7 +116,7 @@
 .empty {
   text-align: center;
   padding: 80px 0;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   color: var(--text-gray);
   font-size: 16px;
 }
@@ -195,7 +195,7 @@
   min-width: 38px;
   height: 38px;
   padding: 0 12px;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-dark);

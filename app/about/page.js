@@ -13,7 +13,7 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          About ëlla
+          About ORNIVAJEWELS
         </motion.h1>
         <motion.p
           className={styles.heroSub}
@@ -30,7 +30,7 @@ export default function AboutPage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Our Story</h2>
           <p className={styles.sectionText}>
-            ëlla was born from a simple belief — that every person deserves to wear jewelry that
+            ORNIVAJEWELS was born from a simple belief — that every person deserves to wear jewelry that
             feels as extraordinary as the moments they celebrate. We specialize in premium 925
             sterling silver jewelry adorned with stunning moissanite gemstones that rival the
             brilliance of natural diamonds at a fraction of the cost. Each piece is thoughtfully
@@ -89,7 +89,7 @@ export default function AboutPage() {
 
         {/* Stats */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>ëlla in Numbers</h2>
+          <h2 className={styles.sectionTitle}>ORNIVAJEWELS in Numbers</h2>
           <div className={styles.statsRow}>
             <div className={styles.stat}>
               <div className={styles.statNumber}>10K+</div>
@@ -112,12 +112,12 @@ export default function AboutPage() {
 
         {/* Why Choose Us */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Why Choose ëlla?</h2>
+          <h2 className={styles.sectionTitle}>Why Choose ORNIVAJEWELS?</h2>
           <p className={styles.sectionText}>
             We don't just sell jewelry — we deliver confidence, elegance, and a promise of
             authenticity. Every order comes with a TGL Certificate of Authenticity, premium
             packaging, and our dedicated customer support. Whether you're shopping for an
-            engagement ring, a birthday gift, or a treat for yourself, ëlla is your trusted
+            engagement ring, a birthday gift, or a treat for yourself, ORNIVAJEWELS is your trusted
             destination for fine jewelry.
           </p>
         </section>

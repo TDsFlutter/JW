@@ -24,8 +24,6 @@ import {
   deleteDoc,
   limit
 } from "firebase/firestore";
-import { getDatabase, ref, set, get, update, onValue } from "firebase/database";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -34,7 +32,6 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
 // Check if credentials are provided
@@ -46,18 +43,12 @@ const isFirebaseConfigured =
 let app;
 let auth = null;
 let db = null;
-let rtdb = null;
-let storage = null;
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
-    if (firebaseConfig.databaseURL) {
-      rtdb = getDatabase(app);
-    }
-    storage = getStorage(app);
   } catch (error) {
     console.error("Error initializing Firebase services:", error);
   }
@@ -196,27 +187,20 @@ export const resetPassword = async (email) => {
   await sendPasswordResetEmail(auth, email);
 };
 
-export { 
-  auth, 
-  db, 
-  rtdb, 
-  storage, 
+export {
+  auth,
+  db,
   isFirebaseConfigured,
-  // Database re-exports for easy consumption
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
+  // Firestore re-exports for easy consumption
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
   deleteDoc,
-  limit,
-  ref,
-  set as dbSet,
-  get as dbGet,
-  update as dbUpdate,
-  onValue
+  limit
 };

@@ -176,7 +176,7 @@ export function AuthProvider({ children }) {
     userProfile,
     isAdmin:
       currentUser?.email?.toLowerCase() === "admin@jw.com" ||
-      currentUser?.uid === "DUWfmbYSCbhqEF0WvnL4tyiXXvX2",
+      currentUser?.uid === "7InVfzqvPcZZ3T1U2e1Ky6S1Sv32",
     loading,
     refreshProfile,
     updateProfileData,

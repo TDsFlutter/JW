@@ -115,7 +115,7 @@ export default function AdminLoginPage() {
     <div className={styles.container}>
       <div className={styles.authCard}>
         <div className={styles.adminBadge}>ADMIN PANEL</div>
-        <h1 className={styles.title}>ëlla jewelry</h1>
+        <h1 className={styles.title}>ORNIVAJEWELS</h1>
         <p className={styles.subtitle}>Administrator Control Panel Access</p>
 
         {!isFirebaseConfigured && (

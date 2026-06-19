@@ -59,7 +59,7 @@
 }
 
 .cardLabel {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
@@ -70,7 +70,7 @@
 }
 
 .cardTitle {
-  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 28px;
   font-weight: 400;
   line-height: 1.3;
@@ -82,7 +82,7 @@
   padding: 10px 24px;
   background: var(--crimson);
   color: #fff;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 700;
   border-radius: var(--radius-sm);

@@ -28,7 +28,7 @@ cp .env.example .env.local
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_FIREBASE_*` | Firebase project credentials (must match main site) |
-| `NEXT_PUBLIC_GITLAB_*` | GitLab image upload configuration |
+| `R2_*` | Cloudflare R2 image upload configuration |
 | `NEXT_PUBLIC_MAIN_SITE_URL` | URL of the main website for cross-navigation |
 
 ## Architecture

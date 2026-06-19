@@ -238,7 +238,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <h3 style={{ fontFamily: "var(--font-baskerville)", fontSize: "1.2rem", marginBottom: "15px" }}>
+              <h3 style={{ fontFamily: "var(--font-montserrat), sans-serif", fontWeight: 600, fontSize: "1.2rem", marginBottom: "15px" }}>
                 Default Shipping Address
               </h3>
               {userProfile?.address ? (

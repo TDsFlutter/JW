@@ -10,7 +10,7 @@
 }
 
 .sectionTitle {
-  font-family: var(--font-montserrat), 'Montserrat Alternates', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 28px;
   font-weight: 600;
   color: var(--crimson);
@@ -82,7 +82,7 @@
 }
 
 .overlayTitle {
-  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 15px;
   font-weight: 400;
   color: var(--text-dark);
@@ -91,7 +91,7 @@
 }
 
 .overlaySubtitle {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 10px;
   color: var(--text-light);
   letter-spacing: 1px;
@@ -106,7 +106,7 @@
 }
 
 .saleTag {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 700;
   color: var(--crimson);
@@ -116,7 +116,7 @@
 }
 
 .title {
-  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 40px;
   font-weight: 400;
   color: var(--text-dark);
@@ -131,7 +131,7 @@
   background: var(--crimson);
   color: #fff;
   padding: 14px 36px;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1.5px;

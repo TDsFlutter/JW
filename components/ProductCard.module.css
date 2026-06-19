@@ -48,7 +48,7 @@
   padding: 4px 10px;
   background: var(--crimson);
   color: #fff;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -64,7 +64,7 @@
   padding: 4px 8px;
   background: #FFD700;
   color: var(--text-dark);
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 10px;
   font-weight: 700;
   border-radius: 3px;
@@ -94,9 +94,9 @@
   padding: 8px 24px;
   background: var(--crimson);
   color: #fff;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.5px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -154,21 +154,21 @@
 }
 
 .price {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--crimson);
 }
 
 .originalPrice {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   color: var(--text-light);
   text-decoration: line-through;
 }
 
 .name {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-dark);
@@ -179,7 +179,7 @@
 }
 
 .category {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 11px;
   color: var(--text-light);
   text-transform: uppercase;

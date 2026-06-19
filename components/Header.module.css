@@ -21,12 +21,13 @@
 }
 
 .logoText {
-  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
-  font-size: 42px;
-  font-weight: 400;
+  font-family: var(--font-cinzel), 'Cinzel', serif;
+  font-size: 26px;
+  font-weight: 500;
   color: var(--text-dark);
   line-height: 1;
-  letter-spacing: -1px;
+  letter-spacing: 2px;
+  white-space: nowrap;
 }
 
 .searchBar {
@@ -53,7 +54,7 @@
   font-size: 13px;
   color: var(--text-gray);
   background: transparent;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
 }
 
 .searchInput::placeholder {
@@ -113,7 +114,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   box-shadow: 0 0 0 2px var(--bg-white);
   pointer-events: none;
 }
@@ -151,7 +152,7 @@
 .navLink {
   display: block;
   padding: 14px 0;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -243,7 +244,7 @@
 @media (max-width: 1024px) {
   .navList { gap: 16px; }
   .navLink { font-size: 11px; }
-  .logoText { font-size: 36px; }
+  .logoText { font-size: 23px; letter-spacing: 1.5px; }
 }
 
 /* ── Mobile (≤ 768px) ─────────────────── */
@@ -254,7 +255,8 @@
   }
 
   .logoText {
-    font-size: 32px;
+    font-size: 20px;
+    letter-spacing: 1px;
   }
 
   .hamburger {
@@ -311,7 +313,7 @@
     font-size: 13px;
     color: var(--text-dark);
     padding: 0 8px;
-    font-family: var(--font-lato), 'Lato', sans-serif;
+    font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   }
 
   .mobileSearchInput:focus {
@@ -392,7 +394,8 @@
   }
 
   .logoText {
-    font-size: 26px;
+    font-size: 16px;
+    letter-spacing: 0.5px;
   }
 
   .headerActions {

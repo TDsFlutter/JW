@@ -840,7 +840,12 @@ export default function AdminDashboard() {
     return matchesSearch && matchesCat && matchesStatus;
   });
 
-  if (authLoading || (currentUser && !isAdmin)) {
+  // Render the dashboard ONLY for a confirmed, authenticated admin. For every
+  // other state (still loading, logged out, or not an admin) show the placeholder
+  // while the auth-guard effect above redirects to /login. This stops the heavy
+  // dashboard from mounting mid-redirect, which is what surfaced the React
+  // "state update on a component that hasn't mounted yet" warning during HMR.
+  if (authLoading || !currentUser || !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas">
         <p className="italic text-gray-500">Verifying credentials…</p>

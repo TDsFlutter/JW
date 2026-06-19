@@ -1,4 +1,4 @@
-import { Lato, Montserrat_Alternates, Libre_Baskerville, Corben } from "next/font/google";
+import { Lato, Montserrat_Alternates, Libre_Baskerville, Corben, Cinzel } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -31,10 +31,17 @@ const baskerville = Libre_Baskerville({
   display: "swap",
 });
 
+const cinzel = Cinzel({
+  variable: "--font-cinzel",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
 export const metadata = {
-  title: "ëlla Admin | Control Panel",
+  title: "ORNIVAJEWELS Admin | Control Panel",
   description:
-    "ëlla Jewelry Admin Control Panel — Manage products, orders, content, and analytics.",
+    "ORNIVAJEWELS Jewelry Admin Control Panel — Manage products, orders, content, and analytics.",
   robots: "noindex, nofollow",
 };
 
@@ -49,7 +56,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${lato.variable} ${montserrat.variable} ${corben.variable} ${baskerville.variable}`}
+        className={`${lato.variable} ${montserrat.variable} ${corben.variable} ${baskerville.variable} ${cinzel.variable}`}
         suppressHydrationWarning
       >
         <AuthProvider>

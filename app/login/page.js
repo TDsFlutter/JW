@@ -141,7 +141,7 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.authCard}>
-        <h1 className={styles.title}>ëlla jewelry</h1>
+        <h1 className={styles.title}>ORNIVAJEWELS</h1>
         <p className={styles.subtitle}>Premium Craftsmanship & Timeless Design</p>
 
         {!isFirebaseConfigured && (

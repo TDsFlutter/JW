@@ -45,7 +45,7 @@
 }
 
 .label {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 3px;
@@ -55,16 +55,16 @@
 }
 
 .title {
-  font-family: var(--font-baskerville), 'Libre Baskerville', serif;
+  font-family: var(--font-cinzel), 'Cinzel', serif;
   font-size: 64px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.1;
   margin-bottom: 16px;
   letter-spacing: -0.5px;
 }
 
 .description {
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
   line-height: 1.7;
   opacity: 0.85;
@@ -79,9 +79,9 @@
   background: var(--crimson);
   color: #fff;
   padding: 14px 36px;
-  font-family: var(--font-lato), 'Lato', sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 1.5px;
   border-radius: var(--radius-sm);
   text-transform: uppercase;

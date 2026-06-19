@@ -6,7 +6,7 @@ function SidebarNav({ navItems, activeTab, onTabChange, exitHref, onNavigate }) 
   return (
     <div className="flex h-full flex-col">
       <div className="mb-8 border-b border-ink-soft pb-5 text-center">
-        <h1 className="font-serif text-2xl tracking-[2px] text-white">ëlla</h1>
+        <h1 className="text-lg font-medium tracking-[2px] text-white" style={{ fontFamily: "var(--font-cinzel), serif" }}>ORNIVAJEWELS</h1>
         <div className="mt-1 text-[0.7rem] uppercase tracking-[1.5px] text-gold">
           Admin Panel
         </div>
@@ -138,7 +138,7 @@ export default function AdminShell({
               <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
-          <span className="font-serif text-lg text-ink">ëlla</span>
+          <span className="text-sm font-medium tracking-[1px] text-ink" style={{ fontFamily: "var(--font-cinzel), serif" }}>ORNIVAJEWELS</span>
           <span className="text-[0.7rem] uppercase tracking-wide text-gold">Admin</span>
         </header>
 

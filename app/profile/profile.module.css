@@ -2,7 +2,7 @@
   max-width: 1200px;
   margin: 40px auto;
   padding: 0 20px;
-  font-family: var(--font-lato), sans-serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
 }
 
 .profileLayout {
@@ -52,7 +52,7 @@
 }
 
 .welcomeTitle {
-  font-family: var(--font-baskerville), serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 1.15rem;
   color: #1a1a1a;
   font-weight: 500;
@@ -139,7 +139,7 @@
 }
 
 .sectionTitle {
-  font-family: var(--font-baskerville), serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 1.5rem;
   color: #1a1a1a;
   margin-bottom: 24px;
@@ -165,7 +165,7 @@
 }
 
 .statVal {
-  font-family: var(--font-baskerville), serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 2.2rem;
   color: #b59410;
   font-weight: 600;
@@ -362,7 +362,7 @@
 }
 
 .wishlistName {
-  font-family: var(--font-baskerville), serif;
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 0.9rem;
   color: #1a1a1a;
   margin-bottom: 6px;
