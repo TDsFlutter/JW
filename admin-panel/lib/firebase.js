@@ -8,22 +8,8 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   OAuthProvider, 
-  onAuthStateChanged 
+  onAuthStateChanged
 } from "firebase/auth";
-import { 
-  getFirestore, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  deleteDoc,
-  limit
-} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -42,15 +28,13 @@ const isFirebaseConfigured =
 
 let app;
 let auth = null;
-let db = null;
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
-    db = getFirestore(app);
   } catch (error) {
-    console.error("Error initializing Firebase services:", error);
+    console.error("Error initializing Firebase Auth:", error);
   }
 } else {
   if (typeof window !== "undefined") {
@@ -76,23 +60,9 @@ export const signUp = async (email, password, displayName) => {
     localStorage.setItem("mock_current_user", JSON.stringify(newUser));
     return newUser;
   }
+  // Profile (incl. role) is persisted by AuthContext via the backend API on login.
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
-  
-  // Set initial customer profile in Firestore
-  const role = email.toLowerCase() === "admin@jw.com" ? "admin" : "customer";
-  await setDoc(doc(db, "users", user.uid), {
-    uid: user.uid,
-    email: user.email,
-    displayName: displayName || user.displayName || email.split("@")[0],
-    role: role,
-    createdAt: new Date().toISOString(),
-    address: "",
-    phone: "",
-    wishlist: []
-  });
-  
-  return user;
+  return userCredential.user;
 };
 
 // Helper: Custom Email/Password SignIn
@@ -120,24 +90,7 @@ export const signInWithGoogle = async () => {
   }
   const provider = new GoogleAuthProvider();
   const result = await signInWithPopup(auth, provider);
-  const user = result.user;
-  
-  // Check if profile exists, if not create
-  const docRef = doc(db, "users", user.uid);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) {
-    await setDoc(docRef, {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || "Google User",
-      role: "customer",
-      createdAt: new Date().toISOString(),
-      address: "",
-      phone: "",
-      wishlist: []
-    });
-  }
-  return user;
+  return result.user;
 };
 
 // Helper: Apple Sign In
@@ -150,23 +103,7 @@ export const signInWithApple = async () => {
   }
   const provider = new OAuthProvider("apple.com");
   const result = await signInWithPopup(auth, provider);
-  const user = result.user;
-  
-  const docRef = doc(db, "users", user.uid);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) {
-    await setDoc(docRef, {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || "Apple User",
-      role: "customer",
-      createdAt: new Date().toISOString(),
-      address: "",
-      phone: "",
-      wishlist: []
-    });
-  }
-  return user;
+  return result.user;
 };
 
 // Helper: Sign Out
@@ -189,18 +126,5 @@ export const resetPassword = async (email) => {
 
 export {
   auth,
-  db,
-  isFirebaseConfigured,
-  // Firestore re-exports for easy consumption
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  deleteDoc,
-  limit
+  isFirebaseConfigured
 };

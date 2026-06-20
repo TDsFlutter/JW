@@ -124,11 +124,9 @@ function ProductDetail({ product }) {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  // Fetch reviews for this product
+  // Seed the product page with sample reviews (no remote backend).
   useEffect(() => {
-    const fetchReviews = async () => {
-      if (!isFirebaseConfigured) {
-        setReviews([
+    setReviews([
           {
             id: "r1",
             authorName: "Sarah K.",
@@ -153,22 +151,7 @@ function ProductDetail({ product }) {
             text: "Bought this for my wife's birthday. She loves it. The rose gold finish is very delicate and classy.",
             createdAt: new Date(Date.now() - 30 * 24 * 60 * 60000).toISOString()
           }
-        ]);
-        return;
-      }
-
-      try {
-        const reviewsRef = collection(db, "products", product.slug, "reviews");
-        const q = query(reviewsRef, orderBy("createdAt", "desc"));
-        const querySnap = await getDocs(q);
-        const fetched = [];
-        querySnap.forEach((doc) => fetched.push({ id: doc.id, ...doc.data() }));
-        setReviews(fetched);
-      } catch (err) {
-        console.error("Error loading reviews:", err);
-      }
-    };
-    fetchReviews();
+    ]);
   }, [product.slug]);
 
   const handleSubmitReview = async (e) => {
@@ -188,20 +171,7 @@ function ProductDetail({ product }) {
       createdAt: new Date().toISOString()
     };
 
-    if (!isFirebaseConfigured) {
-      setReviews((prev) => [{ id: "local_" + Date.now(), ...newReview }, ...prev]);
-    } else {
-      try {
-        const reviewsRef = collection(db, "products", product.slug, "reviews");
-        const docRef = await addDoc(reviewsRef, newReview);
-        setReviews((prev) => [{ id: docRef.id, ...newReview }, ...prev]);
-      } catch (err) {
-        console.error("Error submitting review:", err);
-        alert("Failed to submit review.");
-        setReviewSubmitting(false);
-        return;
-      }
-    }
+    setReviews((prev) => [{ id: "local_" + Date.now(), ...newReview }, ...prev]);
 
     setReviewTitle("");
     setReviewText("");

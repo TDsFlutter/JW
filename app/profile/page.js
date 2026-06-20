@@ -115,24 +115,7 @@ export default function ProfilePage() {
   const [productsList, setProductsList] = useState([]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      if (!isFirebaseConfigured) {
-        setProductsList(products);
-        return;
-      }
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const fetched = [];
-        querySnapshot.forEach((doc) => {
-          fetched.push({ id: doc.id, ...doc.data() });
-        });
-        setProductsList(fetched.length > 0 ? fetched : products);
-      } catch (err) {
-        console.error("Error loading products for wishlist:", err);
-        setProductsList(products);
-      }
-    };
-    fetchProducts();
+    setProductsList(products);
   }, []);
 
   // Get wishlist products
