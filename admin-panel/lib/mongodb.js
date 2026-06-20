@@ -1,5 +1,3 @@
-import { MongoClient } from 'mongodb';
-
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || 'ella_jewelry';
 
@@ -16,6 +14,8 @@ export async function getClient() {
   }
   if (cached.client) return cached.client;
   if (!cached.promise) {
+    // Dynamic import so Turbopack doesn't try to bundle mongodb at build time
+    const { MongoClient } = await import('mongodb');
     cached.promise = new MongoClient(uri).connect();
   }
   cached.client = await cached.promise;
