@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 // Single authorized admin identity (kept in sync with lib/auth.js).
 const ADMIN_EMAIL = "admin@jw.com";
-const ADMIN_UID = "7InVfzqvPcZZ3T1U2e1Ky6S1Sv32";
+const ADMIN_UID = "zsTvN4fN6FbGuYVSoVHlji2bvLA3";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

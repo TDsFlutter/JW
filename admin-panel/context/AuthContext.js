@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setUserProfile(data);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
         setUserProfile(null);
       }
       setLoading(false);
-      
+
       // Custom event listener for local login/logout sync
       const handleMockAuth = () => {
         const user = JSON.parse(localStorage.getItem("mock_current_user"));
@@ -124,12 +124,12 @@ export function AuthProvider({ children }) {
 
   const updateProfileData = async (data) => {
     if (!currentUser) return;
-    
+
     if (!isFirebaseConfigured) {
       const updated = { ...userProfile, ...data };
       setUserProfile(updated);
       localStorage.setItem("mock_current_user", JSON.stringify(updated));
-      
+
       // Update in mock_users array
       const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
       const updatedUsers = users.map(u => u.uid === currentUser.uid ? { ...u, ...data } : u);
@@ -175,7 +175,7 @@ export function AuthProvider({ children }) {
     userProfile,
     isAdmin:
       currentUser?.email?.toLowerCase() === "admin@jw.com" ||
-      currentUser?.uid === "7InVfzqvPcZZ3T1U2e1Ky6S1Sv32",
+      currentUser?.uid === "zsTvN4fN6FbGuYVSoVHlji2bvLA3",
     loading,
     refreshProfile,
     updateProfileData,
