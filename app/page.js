@@ -7,6 +7,7 @@ import Collections from "@/components/Collections";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import MustHave from "@/components/MustHave";
 import Services from "@/components/Services";
+import GoogleReviews from "@/components/GoogleReviews";
 import ImageGallery from "@/components/ImageGallery";
 import Newsletter from "@/components/Newsletter";
 
@@ -20,6 +21,7 @@ export default function Home() {
       <FeaturedProducts />
       <MustHave />
       <Services />
+      <GoogleReviews />
       <ImageGallery />
       <Newsletter />
     </main>
