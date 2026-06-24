@@ -21,9 +21,11 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-// Auto-publish reviews from verified purchasers; queue everyone else.
-// Set REVIEW_AUTO_APPROVE=all to publish everything, or =off to queue everything.
-const AUTO_APPROVE = process.env.REVIEW_AUTO_APPROVE || 'verified';
+// Publish customer reviews immediately by default (no admin moderation needed),
+// so they show on the storefront without any env-var setup. Override with
+// REVIEW_AUTO_APPROVE=verified (only verified purchasers auto-publish) or
+// REVIEW_AUTO_APPROVE=off (queue everything for approval).
+const AUTO_APPROVE = process.env.REVIEW_AUTO_APPROVE || 'all';
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 100;
