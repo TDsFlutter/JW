@@ -2,6 +2,7 @@ import { Montserrat, Cinzel } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { SettingsProvider } from "@/context/SettingsContext";
 import CartDrawer from "@/components/CartDrawer";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
@@ -50,16 +51,18 @@ export default function RootLayout({ children }) {
         className={`${montserrat.variable} ${cinzel.variable}`}
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <CartProvider>
-            <ErrorTracker />
-            <AnnouncementBar />
-            <Header />
-            {children}
-            <Footer />
-            <CartDrawer />
-          </CartProvider>
-        </AuthProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ErrorTracker />
+              <AnnouncementBar />
+              <Header />
+              {children}
+              <Footer />
+              <CartDrawer />
+            </CartProvider>
+          </AuthProvider>
+        </SettingsProvider>
       </body>
     </html>
   );

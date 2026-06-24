@@ -3,11 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { useSettings } from "@/context/SettingsContext";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import styles from "./ProductCard.module.css";
 
 export default function ProductCard({ product, index = 0 }) {
   const { toggleWishlist, isInWishlist, addToCart } = useCart();
+  const { productReviewsEnabled } = useSettings();
   const priceVal = parseFloat(product.price || 0);
   const origPriceVal = parseFloat(product.originalPrice || 0);
   const discount = origPriceVal > priceVal ? Math.round(
@@ -62,7 +64,7 @@ export default function ProductCard({ product, index = 0 }) {
           )}
 
           {discount > 0 && (
-            <span className={styles.discount}>-{discount}%</span>
+            <span className={`${styles.discount} ${isInWishlist(product.id) ? styles.discountShifted : ""}`}>-{discount}%</span>
           )}
 
           <div className={styles.overlay}>
@@ -95,6 +97,26 @@ export default function ProductCard({ product, index = 0 }) {
               </span>
             )}
           </div>
+          {productReviewsEnabled && product.rating_count > 0 && (
+            <div className={styles.ratingRow}>
+              <span className={styles.ratingStars}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <svg
+                    key={i}
+                    viewBox="0 0 24 24"
+                    width="12"
+                    height="12"
+                    fill={i <= Math.round(product.rating_avg) ? "#C8A951" : "none"}
+                    stroke="#C8A951"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                ))}
+              </span>
+              <span className={styles.ratingCount}>({product.rating_count})</span>
+            </div>
+          )}
           <h3 className={styles.name}>{product.name}</h3>
           <p className={styles.category}>{product.category}</p>
         </div>

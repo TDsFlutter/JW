@@ -137,8 +137,10 @@
   transform: scale(1.12);
 }
 
-/* Move discount when wishlist is present */
-.card:hover .discount {
+/* Move the discount badge down whenever the wishlist heart is visible
+   (on hover, or when the item is favorited) so they never overlap. */
+.card:hover .discount,
+.discountShifted {
   top: 52px;
 }
 
@@ -167,6 +169,25 @@
   text-decoration: line-through;
 }
 
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.ratingStars {
+  display: inline-flex;
+  gap: 1px;
+  line-height: 0;
+}
+
+.ratingCount {
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
 .name {
   font-family: var(--font-montserrat), 'Montserrat', sans-serif;
   font-size: 14px;
@@ -189,6 +210,11 @@
 @media (max-width: 768px) {
   .wishlistBtn {
     opacity: 1;
+  }
+
+  /* Heart is always visible on touch devices, so always clear the discount. */
+  .discount {
+    top: 52px;
   }
 }
 
@@ -254,8 +280,8 @@
     font-size: 8px;
   }
 
-  /* Move discount when wishlist is present on mobile */
-  .wishlistBtn + .discount {
+  /* Heart is always visible on mobile; keep the discount clear of it. */
+  .discount {
     top: 40px;
   }
 }

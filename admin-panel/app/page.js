@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { isFirebaseConfigured, auth } from "@/lib/firebase";
+import { isFirebaseConfigured, auth, logout } from "@/lib/firebase";
 import Link from "next/link";
 import styles from "./admin.module.css";
 import AdminShell from "@/components/AdminShell";
@@ -13,8 +13,6 @@ import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { ToastBridge } from "@/components/ui/Toast";
-
-const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_SITE_URL || "http://localhost:3000";
 
 const PRODUCT_STATUS_OPTIONS = ["Draft", "Active", "Deactive", "Out of Stock"];
 
@@ -28,8 +26,25 @@ const statusSelectCls = (s) => {
   return `cursor-pointer rounded-md border px-2 py-1 text-xs font-semibold outline-none focus:ring-2 focus:ring-gold/40 ${tones[s] || "border-line bg-white text-ink"}`;
 };
 
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${checked ? "bg-green-500" : "bg-gray-300"}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`}
+      />
+    </button>
+  );
+}
+
 export default function AdminDashboard() {
-  const { currentUser, isAdmin, loading: authLoading } = useAuth();
+  const { currentUser, isAdmin, loading: authLoading, notifyMockAuthChange } = useAuth();
   const router = useRouter();
 
   // Auth guard — redirect non-admin users
@@ -56,8 +71,20 @@ export default function AdminDashboard() {
   const [faqs, setFaqs] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewPending, setReviewPending] = useState(0);
+  const [settings, setSettings] = useState({ googleReviewsEnabled: true, productReviewsEnabled: true });
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Reviews moderation UI state
+  const [reviewStatusFilter, setReviewStatusFilter] = useState("all");
+  const [reviewRatingFilter, setReviewRatingFilter] = useState("all");
+  const [reviewSearch, setReviewSearch] = useState("");
+  const [selectedReviewIds, setSelectedReviewIds] = useState([]);
+  const [viewingReview, setViewingReview] = useState(null);
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [reviewReply, setReviewReply] = useState("");
 
   // Status/Error States
   const [error, setError] = useState("");
@@ -148,6 +175,18 @@ export default function AdminDashboard() {
     };
   };
 
+  // Log the admin out and return to the admin login page (not the storefront).
+  const handleLogout = async () => {
+    try {
+      await logout();
+      if (!isFirebaseConfigured) notifyMockAuthChange?.();
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      router.replace("/login");
+    }
+  };
+
   // Initialize DB helper
   const handleDbInitialize = async () => {
     if (!confirm("Are you sure you want to initialize the database? This will seed default categories, specifications, and sample products.")) {
@@ -181,7 +220,7 @@ export default function AdminDashboard() {
   // result so switching tabs (or opening drawers) never re-fetches. Mutations
   // force a refresh. This replaces the old loadAllData() that fetched all seven
   // endpoints serially on every tab change.
-  const ALL_RESOURCES = ["stats", "categories", "specifications", "faqs", "blogs", "products", "inquiries", "orders"];
+  const ALL_RESOURCES = ["stats", "categories", "specifications", "faqs", "blogs", "products", "inquiries", "orders", "reviews", "settings"];
   const TAB_RESOURCES = {
     dashboard: ["stats"],
     products: ["products", "categories"],
@@ -191,6 +230,8 @@ export default function AdminDashboard() {
     faqs: ["faqs"],
     orders: ["orders"],
     inquiries: ["inquiries"],
+    reviews: ["reviews"],
+    settings: ["settings"],
   };
 
   const loadedRef = useRef({});
@@ -223,6 +264,18 @@ export default function AdminDashboard() {
       const r = await fetch("/api/orders", { headers });
       const d = r.ok ? await r.json() : [];
       setOrders(Array.isArray(d) ? d : []);
+    } else if (name === "reviews") {
+      const r = await fetch("/api/product-reviews?limit=200", { headers });
+      const d = r.ok ? await r.json() : { reviews: [], pendingCount: 0 };
+      setReviews(Array.isArray(d.reviews) ? d.reviews : []);
+      setReviewPending(d.pendingCount || 0);
+    } else if (name === "settings") {
+      const r = await fetch("/api/settings", { headers });
+      const d = r.ok ? await r.json() : {};
+      setSettings({
+        googleReviewsEnabled: d.googleReviewsEnabled !== false,
+        productReviewsEnabled: d.productReviewsEnabled !== false,
+      });
     }
   };
 
@@ -832,6 +885,126 @@ export default function AdminDashboard() {
     }
   };
 
+  // ── Reviews moderation ────────────────────────────────────────────────────
+  const refreshReviews = async () => {
+    loadedRef.current["reviews"] = false;
+    await loadResources(["reviews"], { force: true });
+  };
+
+  const handleReviewStatusChange = async (review, status) => {
+    if (status === review.status) return;
+    const prev = review.status;
+    setReviews((list) => list.map((r) => (r._id === review._id ? { ...r, status } : r)));
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`/api/product-reviews/${review._id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      setSuccess(`Review marked "${status}".`);
+      setReviewPending((c) => c + (status === "pending" ? 1 : prev === "pending" ? -1 : 0));
+    } catch (err) {
+      setReviews((list) => list.map((r) => (r._id === review._id ? { ...r, status: prev } : r)));
+      setError("Failed to update review: " + err.message);
+    }
+  };
+
+  const handleReviewDelete = async (id) => {
+    if (!confirm("Delete this review permanently?")) return;
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`/api/product-reviews/${id}`, { method: "DELETE", headers });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      setSuccess("Review deleted.");
+      setViewingReview(null);
+      setSelectedReviewIds((ids) => ids.filter((x) => x !== id));
+      refreshReviews();
+    } catch (err) {
+      setError("Failed to delete review: " + err.message);
+    }
+  };
+
+  const handleReviewSaveDetails = async () => {
+    if (!viewingReview) return;
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`/api/product-reviews/${viewingReview._id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ notes: reviewNotes, admin_reply: reviewReply }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      setSuccess("Review updated.");
+      setViewingReview(null);
+      refreshReviews();
+    } catch (err) {
+      setError("Failed to save: " + err.message);
+    }
+  };
+
+  const handleReviewBulk = async (action) => {
+    if (selectedReviewIds.length === 0) return;
+    if (action === "delete" && !confirm(`Delete ${selectedReviewIds.length} review(s) permanently?`)) return;
+    try {
+      const headers = await getHeaders();
+      const res = await fetch("/api/product-reviews/bulk", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ ids: selectedReviewIds, action }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      const data = await res.json();
+      setSuccess(`${data.modified} review(s) ${action}d.`);
+      setSelectedReviewIds([]);
+      refreshReviews();
+    } catch (err) {
+      setError("Bulk action failed: " + err.message);
+    }
+  };
+
+  const openReviewDrawer = (review) => {
+    setViewingReview(review);
+    setReviewNotes(review.moderation?.notes || "");
+    setReviewReply(review.admin_reply?.text || "");
+  };
+
+  const filteredReviews = reviews.filter((r) => {
+    const matchStatus = reviewStatusFilter === "all" || r.status === reviewStatusFilter;
+    const matchRating = reviewRatingFilter === "all" || r.rating === parseInt(reviewRatingFilter, 10);
+    const q = reviewSearch.toLowerCase();
+    const matchSearch =
+      !q ||
+      (r.author_name || "").toLowerCase().includes(q) ||
+      (r.title || "").toLowerCase().includes(q) ||
+      (r.body || "").toLowerCase().includes(q) ||
+      (r.product_name || "").toLowerCase().includes(q);
+    return matchStatus && matchRating && matchSearch;
+  });
+
+  const toggleReviewSelect = (id) => {
+    setSelectedReviewIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  };
+
+  const handleToggleSetting = async (key, value) => {
+    const prev = settings[key];
+    setSettings((s) => ({ ...s, [key]: value })); // optimistic
+    try {
+      const headers = await getHeaders();
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      setSuccess("Settings updated.");
+    } catch (err) {
+      setSettings((s) => ({ ...s, [key]: prev })); // revert on failure
+      setError("Failed to update settings: " + err.message);
+    }
+  };
+
   // ── Render Helpers ────────────────────────────────────────────────────────
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(prodSearch.toLowerCase()) || p.sku.toLowerCase().includes(prodSearch.toLowerCase());
@@ -861,7 +1034,9 @@ export default function AdminDashboard() {
     { key: "blogs", label: "Blogs" },
     { key: "faqs", label: "FAQs" },
     { key: "orders", label: "Orders", count: orders.length },
+    { key: "reviews", label: "Reviews", count: reviewPending },
     { key: "inquiries", label: "Inquiries", count: inquiries.length },
+    { key: "settings", label: "Settings" },
   ];
 
   const tabTitles = {
@@ -872,7 +1047,9 @@ export default function AdminDashboard() {
     blogs: "Journal & Articles",
     faqs: "Store FAQ Management",
     orders: "Order Management",
+    reviews: "Product Reviews",
     inquiries: "Customer Inquiries",
+    settings: "Site Settings",
   };
   const tabDescriptions = {
     dashboard: "Performance metrics, system actions, and recent inquiries.",
@@ -882,7 +1059,9 @@ export default function AdminDashboard() {
     blogs: "Publish press releases, style guides, and product announcements.",
     faqs: "Update dynamic accordion contents for customer support.",
     orders: "Update customer order statuses and fulfill orders.",
+    reviews: "Approve, reply to, and moderate customer product reviews.",
     inquiries: "Review contact messages and pricing requests from the storefront.",
+    settings: "Enable or disable storefront features like review systems.",
   };
 
   const headerActions = (
@@ -926,7 +1105,7 @@ export default function AdminDashboard() {
         title={tabTitles[activeTab]}
         description={tabDescriptions[activeTab]}
         actions={headerActions}
-        exitHref={MAIN_SITE_URL}
+        onLogout={handleLogout}
       >
         <ToastBridge error={error} success={success} />
 
@@ -1301,9 +1480,230 @@ export default function AdminDashboard() {
                 </div>
               </Card>
             )}
+
+            {/* ── TAB: REVIEWS ── */}
+            {activeTab === "reviews" && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    value={reviewSearch}
+                    onChange={(e) => setReviewSearch(e.target.value)}
+                    placeholder="Search author, title, product…"
+                    className={`${fieldCls} min-w-[220px]`}
+                  />
+                  <select value={reviewStatusFilter} onChange={(e) => setReviewStatusFilter(e.target.value)} className={`${fieldCls} cursor-pointer`}>
+                    <option value="all">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  <select value={reviewRatingFilter} onChange={(e) => setReviewRatingFilter(e.target.value)} className={`${fieldCls} cursor-pointer`}>
+                    <option value="all">All ratings</option>
+                    {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
+                  </select>
+                  {selectedReviewIds.length > 0 && (
+                    <div className="ml-auto flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{selectedReviewIds.length} selected</span>
+                      <Button size="sm" onClick={() => handleReviewBulk("approve")}>Approve</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleReviewBulk("reject")}>Reject</Button>
+                      <Button size="sm" variant="danger" onClick={() => handleReviewBulk("delete")}>Delete</Button>
+                    </div>
+                  )}
+                </div>
+
+                <Card bodyClassName="p-0">
+                  <div className={tWrap}>
+                    <table className={tbl}>
+                      <thead>
+                        <tr className={tHead}>
+                          <th className={th}>
+                            <input
+                              type="checkbox"
+                              checked={filteredReviews.length > 0 && filteredReviews.every((r) => selectedReviewIds.includes(r._id))}
+                              onChange={(e) =>
+                                setSelectedReviewIds(e.target.checked ? filteredReviews.map((r) => r._id) : [])
+                              }
+                            />
+                          </th>
+                          <th className={th}>Product</th>
+                          <th className={th}>Author</th>
+                          <th className={th}>Rating</th>
+                          <th className={th}>Review</th>
+                          <th className={th}>Status</th>
+                          <th className={th}>Date</th>
+                          <th className={th}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredReviews.map((r) => (
+                          <tr key={r._id} className={tRow}>
+                            <td className={td}>
+                              <input
+                                type="checkbox"
+                                checked={selectedReviewIds.includes(r._id)}
+                                onChange={() => toggleReviewSelect(r._id)}
+                              />
+                            </td>
+                            <td className={`${td} max-w-[140px] truncate font-medium text-ink`}>{r.product_name || r.product_slug}</td>
+                            <td className={td}>
+                              <div className="font-semibold text-ink">{r.author_name}</div>
+                              {r.verified_purchase && <span className="text-[0.65rem] font-semibold text-green-600">✓ Verified</span>}
+                            </td>
+                            <td className={`${td} whitespace-nowrap text-gold`}>
+                              {"★".repeat(r.rating)}<span className="text-gray-300">{"★".repeat(5 - r.rating)}</span>
+                            </td>
+                            <td className={`${td} max-w-[260px]`}>
+                              <div className="truncate font-semibold text-ink">{r.title}</div>
+                              <div className="truncate text-xs text-gray-500">{r.body}</div>
+                            </td>
+                            <td className={td}>
+                              <select
+                                value={r.status}
+                                onChange={(e) => handleReviewStatusChange(r, e.target.value)}
+                                className={`${fieldCls} min-w-[110px] cursor-pointer`}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                              </select>
+                            </td>
+                            <td className={`${td} whitespace-nowrap text-xs`}>{new Date(r.created_at).toLocaleDateString()}</td>
+                            <td className={td}>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => openReviewDrawer(r)}>View</Button>
+                                <Button variant="danger" size="sm" onClick={() => handleReviewDelete(r._id)}>Delete</Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredReviews.length === 0 && (
+                          <tr><td colSpan="8" className="px-5 py-10 text-center italic text-gray-400">No reviews found.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* ── TAB: SETTINGS ── */}
+            {activeTab === "settings" && (
+              <Card>
+                <div className="max-w-2xl divide-y divide-line">
+                  <div className="flex items-center justify-between gap-6 py-5">
+                    <div>
+                      <h3 className="font-semibold text-ink">Product Reviews</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Let customers rate &amp; review products on the storefront. When off, the
+                        customer reviews section and star ratings are hidden site-wide.
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={settings.productReviewsEnabled}
+                      onChange={(v) => handleToggleSetting("productReviewsEnabled", v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-6 py-5">
+                    <div>
+                      <h3 className="font-semibold text-ink">Google Reviews</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Show the Google reviews carousel on the storefront. When off, the carousel
+                        is hidden.
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={settings.googleReviewsEnabled}
+                      onChange={(v) => handleToggleSetting("googleReviewsEnabled", v)}
+                    />
+                  </div>
+                </div>
+              </Card>
+            )}
           </>
         )}
       </AdminShell>
+
+      {/* ── REVIEW MODERATION DRAWER ── */}
+      <Modal
+        open={!!viewingReview}
+        onClose={() => setViewingReview(null)}
+        title="Review Details"
+        size="md"
+        footer={
+          <div className="flex items-center justify-between gap-2">
+            <Button variant="danger" onClick={() => handleReviewDelete(viewingReview?._id)}>Delete</Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setViewingReview(null)}>Cancel</Button>
+              <Button onClick={handleReviewSaveDetails}>Save</Button>
+            </div>
+          </div>
+        }
+      >
+        {viewingReview && (
+          <div className="space-y-4 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-ink">{viewingReview.author_name}</div>
+                <div className="text-xs text-gray-400">{viewingReview.author_email || "—"}</div>
+              </div>
+              <span className="whitespace-nowrap text-lg text-gold">
+                {"★".repeat(viewingReview.rating)}<span className="text-gray-300">{"★".repeat(5 - viewingReview.rating)}</span>
+              </span>
+            </div>
+
+            <div className="text-xs text-gray-500">
+              Product: <span className="font-medium text-ink">{viewingReview.product_name || viewingReview.product_slug}</span>
+              {viewingReview.verified_purchase && <span className="ml-2 font-semibold text-green-600">✓ Verified purchase</span>}
+            </div>
+
+            <div className="rounded border border-line bg-sand p-3">
+              <div className="font-semibold text-ink">{viewingReview.title}</div>
+              <p className="mt-1 whitespace-pre-wrap text-gray-600">{viewingReview.body}</p>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[0.7rem] font-bold uppercase tracking-wide text-gray-500">Status</label>
+              <div className="flex gap-2">
+                {["pending", "approved", "rejected"].map((s) => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    variant={viewingReview.status === s ? "primary" : "outline"}
+                    onClick={() => {
+                      handleReviewStatusChange(viewingReview, s);
+                      setViewingReview((v) => ({ ...v, status: s }));
+                    }}
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[0.7rem] font-bold uppercase tracking-wide text-gray-500">Moderation notes (internal)</label>
+              <textarea
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                rows={2}
+                className={`${fieldCls} w-full`}
+                placeholder="Why was this approved/rejected? (not shown publicly)"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[0.7rem] font-bold uppercase tracking-wide text-gray-500">Public reply</label>
+              <textarea
+                value={reviewReply}
+                onChange={(e) => setReviewReply(e.target.value)}
+                rows={3}
+                className={`${fieldCls} w-full`}
+                placeholder="Optional response shown under the review on the storefront"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* ── PRODUCT DRAWERS / MODALS ── */}
       <Modal open={isProductDrawerOpen} onClose={() => setIsProductDrawerOpen(false)} title={editingProduct ? "Edit Product" : "Add New Product"} size="lg">

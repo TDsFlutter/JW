@@ -8,9 +8,10 @@ import { getProductBySlug, getRelatedProducts } from "@/data/products";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import { buildProductMessage, openWhatsApp } from "@/lib/whatsapp";
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProductCard from "@/components/ProductCard";
+import ProductReviews from "@/components/ProductReviews";
+import { useSettings } from "@/context/SettingsContext";
 import styles from "./product.module.css";
 
 export default function ProductPageClient({ params }) {
@@ -18,6 +19,12 @@ export default function ProductPageClient({ params }) {
   const slug = resolvedParams.slug;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Links from the home page (when scrolled down) or from related products can
+  // carry over the previous scroll position — always start a product page at the top.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
 
   // Fetch product from Backend API or fallback to mock data
   useEffect(() => {
@@ -66,7 +73,7 @@ export default function ProductPageClient({ params }) {
 
 function ProductDetail({ product }) {
   const { addToCart, toggleWishlist, isInWishlist } = useCart();
-  const { currentUser, userProfile } = useAuth();
+  const { productReviewsEnabled } = useSettings();
   const [selectedImage, setSelectedImage] = useState(0);
   const productMetals = product.metals || ["Sterling Silver", "18K Gold Plate", "Rose Gold"];
   const productSizes = product.sizes || (product.category === "Rings" ? ["6", "7", "8", "9", "10", "11", "12", "13", "14"] : ["Standard"]);
@@ -116,70 +123,12 @@ function ProductDetail({ product }) {
 
   const productSpecs = getProductSpecs();
 
-  // Reviews state
-  const [reviews, setReviews] = useState([]);
-  const [reviewTitle, setReviewTitle] = useState("");
-  const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewSuccess, setReviewSuccess] = useState(false);
-
-  // Seed the product page with sample reviews (no remote backend).
-  useEffect(() => {
-    setReviews([
-          {
-            id: "r1",
-            authorName: "Sarah K.",
-            rating: 5,
-            title: "Absolutely stunning!",
-            text: "I bought this ring for my anniversary and my partner was speechless. The craftsmanship is impeccable and it sparkles beautifully.",
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60000).toISOString()
-          },
-          {
-            id: "r2",
-            authorName: "Emily T.",
-            rating: 5,
-            title: "Worth every penny",
-            text: "The moissanite looks even more brilliant than I expected. Great quality, fast shipping, and the packaging was beautiful!",
-            createdAt: new Date(Date.now() - 15 * 24 * 60 * 60000).toISOString()
-          },
-          {
-            id: "r3",
-            authorName: "Mark D.",
-            rating: 4,
-            title: "Beautiful gift",
-            text: "Bought this for my wife's birthday. She loves it. The rose gold finish is very delicate and classy.",
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60000).toISOString()
-          }
-    ]);
-  }, [product.slug]);
-
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    if (!currentUser) {
-      alert("Please sign in to leave a review.");
-      return;
-    }
-    if (!reviewText.trim()) return;
-
-    setReviewSubmitting(true);
-    const newReview = {
-      authorName: userProfile?.displayName || currentUser.email?.split("@")[0] || "Customer",
-      rating: reviewRating,
-      title: reviewTitle || "Review",
-      text: reviewText,
-      createdAt: new Date().toISOString()
-    };
-
-    setReviews((prev) => [{ id: "local_" + Date.now(), ...newReview }, ...prev]);
-
-    setReviewTitle("");
-    setReviewText("");
-    setReviewRating(5);
-    setReviewSuccess(true);
-    setReviewSubmitting(false);
-    setTimeout(() => setReviewSuccess(false), 3000);
-  };
+  // Live rating summary for the header row, kept in sync with the reviews
+  // section below via the onSummaryChange callback.
+  const [ratingSummary, setRatingSummary] = useState({
+    average: Number(product.rating_avg || 0),
+    count: Number(product.rating_count || 0),
+  });
 
   const [relatedProducts, setRelatedProducts] = useState([]);
 
@@ -539,15 +488,30 @@ function ProductDetail({ product }) {
             transition={{ duration: 0.6, delay: 0.15 }}
           >
             {/* Rating Row */}
+            {productReviewsEnabled && (
             <div className={styles.ratingRow}>
               <div className={styles.stars}>
-                {[1,2,3,4].map(i => (
-                  <svg key={i} viewBox="0 0 24 24" fill="#F59E0B" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <svg
+                    key={i}
+                    viewBox="0 0 24 24"
+                    fill={i <= Math.round(ratingSummary.average) ? "#F59E0B" : "none"}
+                    stroke="#F59E0B"
+                    strokeWidth="2"
+                    width="16"
+                    height="16"
+                  >
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
                 ))}
-                <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                <span className={styles.reviewCount}>({reviews.length || 174} reviews)</span>
+                <span className={styles.reviewCount}>
+                  {ratingSummary.count > 0
+                    ? `${ratingSummary.average.toFixed(1)} (${ratingSummary.count} review${ratingSummary.count === 1 ? "" : "s"})`
+                    : "No reviews yet"}
+                </span>
               </div>
             </div>
+            )}
 
             <p className={styles.categoryLabel}>{product.category}</p>
             <h1 className={styles.productName}>{product.name}</h1>
@@ -968,116 +932,11 @@ function ProductDetail({ product }) {
         )}
 
         {/* ===== REVIEWS SECTION ===== */}
-        <div className={styles.reviewsSection}>
-          <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
-          <div className={styles.reviewsLayout}>
-            {/* Reviews List */}
-            <div className={styles.reviewsList}>
-              {reviews.length === 0 ? (
-                <div className={styles.emptyReviews}>
-                  No reviews yet for this product. Be the first to leave a review!
-                </div>
-              ) : (
-                reviews.map((review) => (
-                  <div key={review.id} className={styles.reviewCard}>
-                    <div className={styles.reviewHeader}>
-                      <div className={styles.reviewMeta}>
-                        <span className={styles.reviewAuthor}>{review.authorName}</span>
-                        <span className={styles.reviewDate}>
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className={styles.reviewStars}>
-                        {Array.from({ length: review.rating }).map((_, i) => (
-                          <svg key={i} viewBox="0 0 24 24" fill="#F59E0B" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        ))}
-                      </div>
-                    </div>
-                    <h4 className={styles.reviewTitleText}>{review.title}</h4>
-                    <p className={styles.reviewText}>{review.text}</p>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Review Form */}
-            <div className={styles.reviewFormCard}>
-              <h3 className={styles.reviewFormTitle}>Write a Review</h3>
-              {currentUser ? (
-                <form onSubmit={handleSubmitReview}>
-                  {reviewSuccess && (
-                    <div style={{ color: "#16A34A", fontSize: "0.85rem", marginBottom: "12px", fontWeight: "600" }}>
-                      ✓ Review submitted successfully!
-                    </div>
-                  )}
-
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Rating</label>
-                    <div className={styles.starsSelector}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          className={`${styles.starSelectBtn} ${reviewRating >= star ? styles.starSelected : ""}`}
-                          onClick={() => setReviewRating(star)}
-                        >
-                          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="review-title" className={styles.formLabel}>Review Title</label>
-                    <input
-                      id="review-title"
-                      type="text"
-                      className={styles.formInputText}
-                      placeholder="e.g. Beautiful craftmanship, highly recommend!"
-                      value={reviewTitle}
-                      onChange={(e) => setReviewTitle(e.target.value)}
-                    />
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="review-text" className={styles.formLabel}>Review Details</label>
-                    <textarea
-                      id="review-text"
-                      className={styles.formInputText}
-                      style={{ minHeight: "100px", resize: "vertical" }}
-                      placeholder="Share your experience wearing this piece..."
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className={styles.buyNowBtn}
-                    style={{ width: "100%", marginTop: "10px" }}
-                    disabled={reviewSubmitting}
-                  >
-                    {reviewSubmitting ? "Submitting..." : "Submit Review"}
-                  </button>
-                </form>
-              ) : (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <p style={{ fontSize: "0.9rem", color: "#707070", marginBottom: "16px" }}>
-                    Please sign in to leave a review.
-                  </p>
-                  <Link
-                    href={`/login?redirect=/products/${product.slug}`}
-                    className={styles.backBtn}
-                    style={{ marginTop: "0" }}
-                  >
-                    Sign In to Review
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ProductReviews
+          productSlug={product.slug}
+          productId={product.id}
+          onSummaryChange={setRatingSummary}
+        />
       </div>
     </div>
   );

@@ -153,9 +153,30 @@ function ShopContent() {
     );
   }
 
+  // Default ("Featured") order — applies to All and within each category:
+  // highest-rated products first, then the most recently added.
+  if (sortBy === "default") {
+    filtered.sort((a, b) => {
+      const byRating = (b.rating_avg || 0) - (a.rating_avg || 0);
+      if (byRating !== 0) return byRating;
+      const byReviews = (b.rating_count || 0) - (a.rating_count || 0);
+      if (byReviews !== 0) return byReviews;
+      // Tie → newest added first (fall back to higher id when no date).
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      if (dateB !== dateA) return dateB - dateA;
+      return (b.id || 0) - (a.id || 0);
+    });
+  }
   if (sortBy === "price-low") filtered.sort((a, b) => a.price - b.price);
   if (sortBy === "price-high") filtered.sort((a, b) => b.price - a.price);
   if (sortBy === "name") filtered.sort((a, b) => a.name.localeCompare(b.name));
+  if (sortBy === "top-rated")
+    filtered.sort(
+      (a, b) =>
+        (b.rating_avg || 0) - (a.rating_avg || 0) ||
+        (b.rating_count || 0) - (a.rating_count || 0)
+    );
 
   // ── Pagination ────────────────────────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE));
@@ -232,6 +253,7 @@ function ShopContent() {
             className={styles.sortSelect}
           >
             <option value="default">Featured</option>
+            <option value="top-rated">Top Rated</option>
             <option value="price-low">Price: Low to High</option>
             <option value="price-high">Price: High to Low</option>
             <option value="name">Name A–Z</option>

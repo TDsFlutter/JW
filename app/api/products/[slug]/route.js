@@ -32,6 +32,9 @@ export async function GET(req, { params }) {
       category: category?.name,
       category_name: category?.name,
       sku_prefix: category?.sku_prefix,
+      rating_avg: p.rating_avg || 0,
+      rating_count: p.rating_count || 0,
+      rating_breakdown: p.rating_breakdown || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
     });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

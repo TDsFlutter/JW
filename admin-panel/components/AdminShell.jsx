@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "./ui/cn";
 
-function SidebarNav({ navItems, activeTab, onTabChange, exitHref, onNavigate }) {
+function SidebarNav({ navItems, activeTab, onTabChange, onLogout, onNavigate }) {
   return (
     <div className="flex h-full flex-col">
       <div className="mb-8 border-b border-ink-soft pb-5 text-center">
@@ -50,13 +50,20 @@ function SidebarNav({ navItems, activeTab, onTabChange, exitHref, onNavigate }) 
         </ul>
       </nav>
 
-      {exitHref && (
-        <a
-          href={exitHref}
+      {onLogout && (
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            onLogout();
+          }}
           className="mt-4 flex items-center justify-center gap-2 rounded border border-ink-soft px-4 py-3 text-[0.8rem] font-medium uppercase tracking-wide text-gray-300 transition-colors hover:bg-ink-soft hover:text-gold"
         >
-          ← Exit Admin
-        </a>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Logout
+        </button>
       )}
     </div>
   );
@@ -69,7 +76,7 @@ export default function AdminShell({
   title,
   description,
   actions,
-  exitHref,
+  onLogout,
   children,
 }) {
   const [open, setOpen] = useState(false);
@@ -93,7 +100,7 @@ export default function AdminShell({
           navItems={navItems}
           activeTab={activeTab}
           onTabChange={onTabChange}
-          exitHref={exitHref}
+          onLogout={onLogout}
         />
       </aside>
 
@@ -118,7 +125,7 @@ export default function AdminShell({
           navItems={navItems}
           activeTab={activeTab}
           onTabChange={onTabChange}
-          exitHref={exitHref}
+          onLogout={onLogout}
           onNavigate={() => setOpen(false)}
         />
       </aside>

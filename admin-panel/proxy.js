@@ -85,6 +85,8 @@ export function proxy(req) {
     pathname === "/api/db-init" ||
     pathname === "/api/stats" ||
     startsWithAny(pathname, ["/api/upload"]) ||
+    startsWithAny(pathname, ["/api/product-reviews"]) ||
+    startsWithAny(pathname, ["/api/settings"]) ||
     (pathname === "/api/contact" && method === "GET") ||
     isCatalogWrite;
 

@@ -76,6 +76,12 @@ export default function ProfilePage() {
     }
   }, [currentUser, loading, router]);
 
+  const [productsList, setProductsList] = useState([]);
+
+  useEffect(() => {
+    setProductsList(products);
+  }, []);
+
   if (loading || !currentUser) {
     return (
       <div className={styles.container}>
@@ -111,12 +117,6 @@ export default function ProfilePage() {
       setSaveError(err.message || "Failed to update profile.");
     }
   };
-
-  const [productsList, setProductsList] = useState([]);
-
-  useEffect(() => {
-    setProductsList(products);
-  }, []);
 
   // Get wishlist products
   const wishlistProducts = productsList.filter(p => wishlist.includes(p.id) || wishlist.includes(p.slug));

@@ -18,6 +18,8 @@ function enrich(p) {
     images: Array.isArray(p.images) ? p.images : [],
     specs: Array.isArray(p.specs) ? p.specs.map((s) => ({ label: s.name, value: s.value })) : [],
     category: p.category_name,
+    rating_avg: p.rating_avg || 0,
+    rating_count: p.rating_count || 0,
   };
 }
 

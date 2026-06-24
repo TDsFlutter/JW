@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, useInView } from "framer-motion";
 import { trackEvent } from "@/lib/firebase";
+import { useSettings } from "@/context/SettingsContext";
 import styles from "./GoogleReviews.module.css";
 
 // ---- Star rendering helpers ----
@@ -120,6 +121,7 @@ function ReviewCard({ review, index }) {
 // ---- Main Component ----
 
 export default function GoogleReviews() {
+  const { googleReviewsEnabled } = useSettings();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -209,6 +211,9 @@ export default function GoogleReviews() {
   }, [data]);
 
   // ---- Render ----
+
+  // Hidden entirely when Google reviews are disabled in the admin settings.
+  if (!googleReviewsEnabled) return null;
 
   return (
     <section className={styles.section} id="google-reviews" ref={sectionRef}>
