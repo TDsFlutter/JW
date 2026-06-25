@@ -73,7 +73,17 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewPending, setReviewPending] = useState(0);
-  const [settings, setSettings] = useState({ googleReviewsEnabled: true, productReviewsEnabled: true });
+  const DEFAULT_DISCOUNT_TIERS = [
+    { label: "5% OFF", sub: "On prepaid orders", enabled: true },
+    { label: "10% OFF", sub: "On orders above ₹1,499", enabled: true },
+    { label: "15% OFF", sub: "On orders above ₹2,999", enabled: true },
+  ];
+  const [settings, setSettings] = useState({
+    googleReviewsEnabled: true,
+    productReviewsEnabled: true,
+    discountTiers: DEFAULT_DISCOUNT_TIERS,
+  });
+  const [savingDiscounts, setSavingDiscounts] = useState(false);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -135,6 +145,16 @@ export default function AdminDashboard() {
   const [formProdVideoUrl, setFormProdVideoUrl] = useState("");
   const [formProdImages, setFormProdImages] = useState([""]);
   const [formProdSpecs, setFormProdSpecs] = useState([]); // array of { name, value }
+  // Plating / colour stock. Fixed three platings; admin toggles availability and
+  // sets a stock quantity per colour. Keys match the storefront swatch names.
+  const PLATING_OPTIONS = [
+    { key: "Sterling Silver", label: "White Gold" },
+    { key: "18K Gold Plate", label: "Yellow Gold" },
+    { key: "Rose Gold", label: "Rose Gold" },
+  ];
+  const makeDefaultColorVariants = () =>
+    PLATING_OPTIONS.map((o, i) => ({ ...o, enabled: i === 0, stock: 0 }));
+  const [formProdColorVariants, setFormProdColorVariants] = useState(makeDefaultColorVariants());
 
   // Form States - Categories
   const [formCatName, setFormCatName] = useState("");
@@ -275,6 +295,10 @@ export default function AdminDashboard() {
       setSettings({
         googleReviewsEnabled: d.googleReviewsEnabled !== false,
         productReviewsEnabled: d.productReviewsEnabled !== false,
+        discountTiers:
+          Array.isArray(d.discountTiers) && d.discountTiers.length
+            ? d.discountTiers
+            : DEFAULT_DISCOUNT_TIERS,
       });
     }
   };
@@ -386,6 +410,20 @@ export default function AdminDashboard() {
       setFormProdVideoUrl(prod.video_url || "");
       setFormProdImages(Array.isArray(prod.images) && prod.images.length > 0 ? prod.images : [""]);
       setFormProdSpecs(Array.isArray(prod.specs) ? prod.specs.map(s => ({ name: s.label, value: s.value })) : []);
+      // Merge saved colour stock onto the fixed plating set (handles legacy
+      // products that predate colorVariants).
+      setFormProdColorVariants(
+        PLATING_OPTIONS.map((o, i) => {
+          const saved = Array.isArray(prod.colorVariants)
+            ? prod.colorVariants.find((v) => v.key === o.key)
+            : null;
+          return {
+            ...o,
+            enabled: saved ? saved.enabled === true : i === 0,
+            stock: saved ? parseInt(saved.stock, 10) || 0 : 0,
+          };
+        })
+      );
     } else {
       setEditingProduct(null);
       setFormProdName("");
@@ -410,6 +448,7 @@ export default function AdminDashboard() {
       setFormProdVideoUrl("");
       setFormProdImages([""]);
       setFormProdSpecs([]);
+      setFormProdColorVariants(makeDefaultColorVariants());
     }
     setIsProductDrawerOpen(true);
   };
@@ -446,7 +485,13 @@ export default function AdminDashboard() {
       availability: formProdAvailability,
       video_url: formProdVideoUrl || null,
       images: formProdImages.filter(img => img.trim() !== ""),
-      specs: formProdSpecs.filter(s => s.name && s.value)
+      specs: formProdSpecs.filter(s => s.name && s.value),
+      colorVariants: formProdColorVariants.map((v) => ({
+        key: v.key,
+        label: v.label,
+        enabled: !!v.enabled,
+        stock: parseInt(v.stock, 10) || 0,
+      })),
     };
 
     try {
@@ -1002,6 +1047,38 @@ export default function AdminDashboard() {
     } catch (err) {
       setSettings((s) => ({ ...s, [key]: prev })); // revert on failure
       setError("Failed to update settings: " + err.message);
+    }
+  };
+
+  // Edit a single field of one discount tier in local state (saved separately).
+  const handleDiscountTierChange = (idx, field, value) => {
+    setSettings((s) => {
+      const tiers = (s.discountTiers || DEFAULT_DISCOUNT_TIERS).map((t, i) =>
+        i === idx ? { ...t, [field]: value } : t
+      );
+      return { ...s, discountTiers: tiers };
+    });
+  };
+
+  const handleSaveDiscountTiers = async () => {
+    setSavingDiscounts(true);
+    try {
+      const headers = await getHeaders();
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ discountTiers: settings.discountTiers }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      const { settings: saved } = await res.json();
+      if (saved?.discountTiers) {
+        setSettings((s) => ({ ...s, discountTiers: saved.discountTiers }));
+      }
+      setSuccess("Discount badges updated.");
+    } catch (err) {
+      setError("Failed to update discount badges: " + err.message);
+    } finally {
+      setSavingDiscounts(false);
     }
   };
 
@@ -1616,6 +1693,55 @@ export default function AdminDashboard() {
                       onChange={(v) => handleToggleSetting("googleReviewsEnabled", v)}
                     />
                   </div>
+
+                  {/* Product-page discount badges */}
+                  <div className="py-5">
+                    <div className="mb-1 flex items-center justify-between gap-6">
+                      <h3 className="font-semibold text-ink">Product Discount Badges</h3>
+                      <button
+                        type="button"
+                        onClick={handleSaveDiscountTiers}
+                        disabled={savingDiscounts}
+                        className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                      >
+                        {savingDiscounts ? "Saving…" : "Save Badges"}
+                      </button>
+                    </div>
+                    <p className="mb-4 text-sm text-gray-500">
+                      The three offer cards shown on every product page. Edit the text, or turn a
+                      badge off to hide it. Disabled badges are not shown on the storefront.
+                    </p>
+                    <div className="space-y-3">
+                      {(settings.discountTiers || DEFAULT_DISCOUNT_TIERS).map((tier, idx) => (
+                        <div
+                          key={idx}
+                          className="flex flex-col gap-3 rounded-lg border border-line p-3 sm:flex-row sm:items-center"
+                        >
+                          <input
+                            type="text"
+                            value={tier.label}
+                            onChange={(e) => handleDiscountTierChange(idx, "label", e.target.value)}
+                            placeholder="5% OFF"
+                            className="w-full rounded-lg border border-line px-3 py-2 text-sm sm:w-40"
+                          />
+                          <input
+                            type="text"
+                            value={tier.sub}
+                            onChange={(e) => handleDiscountTierChange(idx, "sub", e.target.value)}
+                            placeholder="On prepaid orders"
+                            className="w-full flex-1 rounded-lg border border-line px-3 py-2 text-sm"
+                          />
+                          <label className="flex items-center gap-2 text-sm text-gray-600">
+                            <Toggle
+                              checked={tier.enabled !== false}
+                              onChange={(v) => handleDiscountTierChange(idx, "enabled", v)}
+                            />
+                            <span>{tier.enabled !== false ? "Visible" : "Hidden"}</span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </Card>
             )}
@@ -1897,6 +2023,52 @@ export default function AdminDashboard() {
                   <input type="number" value={formProdDisplayOrder} onChange={(e) => setFormProdDisplayOrder(e.target.value)} className={styles.input} />
                 </div>
               </div>
+
+              {/* PLATING / COLOUR STOCK */}
+              <h4 style={{ borderBottom: "1px solid #eae6df", paddingBottom: "6px", margin: "15px 0 5px" }} className={styles.label}>
+                Plating Colours &amp; Stock
+              </h4>
+              <p style={{ fontSize: "0.75rem", color: "#707070", margin: "0 0 10px" }}>
+                Enable the plating colours available for this product and set stock for each. The
+                storefront shows the colour selector only when two or more colours are enabled.
+              </p>
+              {formProdColorVariants.map((variant, index) => (
+                <div
+                  key={variant.key}
+                  className={styles.formGrid}
+                  style={{ alignItems: "end", marginBottom: "8px" }}
+                >
+                  <div className={styles.formGroup}>
+                    <label className={styles.label} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="checkbox"
+                        checked={!!variant.enabled}
+                        onChange={(e) => {
+                          const updated = [...formProdColorVariants];
+                          updated[index] = { ...updated[index], enabled: e.target.checked };
+                          setFormProdColorVariants(updated);
+                        }}
+                      />
+                      {variant.label}
+                    </label>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Stock Quantity</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={variant.stock}
+                      disabled={!variant.enabled}
+                      onChange={(e) => {
+                        const updated = [...formProdColorVariants];
+                        updated[index] = { ...updated[index], stock: e.target.value };
+                        setFormProdColorVariants(updated);
+                      }}
+                      className={styles.input}
+                    />
+                  </div>
+                </div>
+              ))}
 
               {/* DYNAMIC PRODUCT SPECIFICATIONS */}
               <h4 style={{ borderBottom: "1px solid #eae6df", paddingBottom: "6px", margin: "15px 0 5px" }} className={styles.label}>

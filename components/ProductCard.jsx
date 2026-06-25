@@ -7,7 +7,7 @@ import { useSettings } from "@/context/SettingsContext";
 import { getImageSrc, isExternalImage } from "@/lib/imageHelper";
 import styles from "./ProductCard.module.css";
 
-export default function ProductCard({ product, index = 0 }) {
+export default function ProductCard({ product, index = 0, view = "grid" }) {
   const { toggleWishlist, isInWishlist, addToCart } = useCart();
   const { productReviewsEnabled } = useSettings();
   const priceVal = parseFloat(product.price || 0);
@@ -33,7 +33,7 @@ export default function ProductCard({ product, index = 0 }) {
 
   return (
     <motion.div
-      className={styles.card}
+      className={`${styles.card} ${view === "list" ? styles.cardList : ""}`}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}

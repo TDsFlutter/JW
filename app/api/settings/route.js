@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getSettings } from '@/lib/settings';
+import { getSettings, DEFAULT_DISCOUNT_TIERS } from '@/lib/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,10 @@ export async function GET() {
     return NextResponse.json(settings);
   } catch (error) {
     console.error('[GET /api/settings] Error:', error);
-    return NextResponse.json({ googleReviewsEnabled: true, productReviewsEnabled: true });
+    return NextResponse.json({
+      googleReviewsEnabled: true,
+      productReviewsEnabled: true,
+      discountTiers: DEFAULT_DISCOUNT_TIERS,
+    });
   }
 }

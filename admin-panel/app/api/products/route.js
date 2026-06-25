@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb, getNextId } from '@/lib/mongodb';
 import { verifyAdminRequest } from '@/lib/auth';
+import { sanitizeColorVariants } from '@/lib/plating';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -108,7 +109,7 @@ export async function POST(req) {
       name, slug, short_description, description, category_id, subcategory,
       metal_type, metal_color, purity, stone_type, stone_shape, cut_grade,
       style, collection, base_price, sale_price, status, display_order,
-      gender, availability, video_url, images, specs,
+      gender, availability, video_url, images, specs, colorVariants,
     } = data;
 
     if (!name || !category_id || !base_price) {
@@ -192,6 +193,7 @@ export async function POST(req) {
       video_url: video_url || null,
       images: cleanImages,
       specs: allSpecs.filter((s) => s.name && s.value),
+      colorVariants: sanitizeColorVariants(colorVariants),
       created_at: now,
       updated_at: now,
     });
